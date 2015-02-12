@@ -1,0 +1,14 @@
+{
+  "name": "waterline-spike",
+  "version": "0.0.1",
+  "description": "a test of waterline with expressjs and (hopefully) socket.io",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Duncan Fermor",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.11.2"
+  }
+}
