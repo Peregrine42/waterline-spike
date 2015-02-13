@@ -22,6 +22,10 @@ bacon_http = require('./routes/restful-socket').add_channel('message', http);
 http = bacon_http.http;
 broadcast_messages = bacon_http.broadcast;
 
+// TODO: debug output
+broadcast_messages.onValue(function(msg) {console.log(msg)});
+
+// TODO: for testing
 //var test_msg = rest('create', make_message('testing, 1, 2, 3!'))
 //setTimeout(function() { broadcast_messages.push(test_msg) }, 5000);
 

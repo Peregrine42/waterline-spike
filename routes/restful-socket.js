@@ -13,7 +13,6 @@ module.exports.add_channel = function(channel, http) {
   });
 
   broadcast.onValue(function(msg) {
-    console.log('broadcasting', msg);
     io.emit(channel, msg);
   });
 
