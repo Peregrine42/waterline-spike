@@ -9,6 +9,7 @@
   "author": "Duncan Fermor",
   "license": "ISC",
   "dependencies": {
+    "baconjs": "^0.7.47",
     "express": "^4.11.2",
     "express-handlebars": "^1.1.0",
     "socket.io": "^1.3.3"
