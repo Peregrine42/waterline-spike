@@ -1,0 +1,57 @@
+{
+  "data": {
+    "message": [
+      {
+        "action": "create",
+        "params": {
+          "content": "hi"
+        },
+        "createdAt": "2015-02-19T09:56:20.525Z",
+        "updatedAt": "2015-02-19T09:56:20.525Z",
+        "id": 1
+      },
+      {
+        "action": "create",
+        "params": {
+          "content": "yo"
+        },
+        "createdAt": "2015-02-19T09:56:49.428Z",
+        "updatedAt": "2015-02-19T09:56:49.428Z",
+        "id": 2
+      },
+      {
+        "action": "create",
+        "params": {
+          "content": "hi"
+        },
+        "createdAt": "2015-02-19T09:57:54.576Z",
+        "updatedAt": "2015-02-19T09:57:54.576Z",
+        "id": 3
+      }
+    ]
+  },
+  "schema": {
+    "message": {
+      "text": {
+        "type": "string"
+      },
+      "id": {
+        "type": "integer",
+        "autoIncrement": true,
+        "primaryKey": true,
+        "unique": true
+      },
+      "createdAt": {
+        "type": "datetime"
+      },
+      "updatedAt": {
+        "type": "datetime"
+      }
+    }
+  },
+  "counters": {
+    "message": {
+      "id": 3
+    }
+  }
+}

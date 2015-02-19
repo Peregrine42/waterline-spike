@@ -15,6 +15,7 @@ function make_message(content) {
 
 var socket = io();
 var channel = 'message';
+
 $('form').submit(function(){
   var text = $('#m').val();
   $('#m').val('');
@@ -29,3 +30,5 @@ socket.on(channel, function(message){
 
   $('#messages').append($('<li>').text(msg));
 });
+
+socket.emit(channel, rest('index', {});
