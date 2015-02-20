@@ -25,10 +25,27 @@ $('form').submit(function(){
   return false;
 });
 
+$('#deleter').click(function() {
+  var id = $('ul li:last-child').attr('id');
+  message = rest('destroy', {'criteria': {'id': id }})
+  console.log(message);
+  socket.emit(channel, message);
+});
+
 socket.on(channel, function(message){
   console.log(message);
-  var msg = message.params.content;
-  $('#messages').append($('<li>').text(msg));
+  if (message.action == 'create') {
+    var msg = message.params.content;
+    $('#messages').append($('<li id="' + message.params.id + '">').text(msg));
+    $('#'+ message.params.id).click(function() {
+      socket.emit(channel, rest('update', {'criteria': {'id':message.params.id}, 'values': {'content':'foo'}}));
+    });
+  } else if (message.action == 'update') {
+    var msg = message.params.content;
+    $('#'+ message.params.id).text(msg);
+  } else if (message.action == 'destroy') {
+    $('#'+ message.params.id).remove();
+  }
 });
 
 socket.emit(channel, rest('index', {}));

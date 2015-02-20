@@ -5,9 +5,9 @@ var Message = Waterline.Collection.extend({
 
   connection: 'myLocalDisk',
 
-  attributes: {
-    text: 'string'
-  }
+  //afterCreate: function(record, next) {
+
+  //}
 });
 
 module.exports = Message;

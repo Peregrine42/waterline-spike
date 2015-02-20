@@ -1,37 +1,9 @@
 {
   "data": {
-    "message": [
-      {
-        "content": "hi",
-        "createdAt": "2015-02-20T02:29:08.140Z",
-        "updatedAt": "2015-02-20T02:29:08.140Z",
-        "id": 81
-      },
-      {
-        "content": "there",
-        "createdAt": "2015-02-20T02:29:12.073Z",
-        "updatedAt": "2015-02-20T02:29:12.073Z",
-        "id": 82
-      },
-      {
-        "content": "oh yes",
-        "createdAt": "2015-02-20T02:29:19.340Z",
-        "updatedAt": "2015-02-20T02:29:19.340Z",
-        "id": 83
-      },
-      {
-        "content": "woooohoooo!",
-        "createdAt": "2015-02-20T02:29:40.639Z",
-        "updatedAt": "2015-02-20T02:29:40.639Z",
-        "id": 84
-      }
-    ]
+    "message": []
   },
   "schema": {
     "message": {
-      "text": {
-        "type": "string"
-      },
       "id": {
         "type": "integer",
         "autoIncrement": true,
@@ -48,7 +20,7 @@
   },
   "counters": {
     "message": {
-      "id": 84
+      "id": 113
     }
   }
 }

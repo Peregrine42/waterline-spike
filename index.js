@@ -6,12 +6,13 @@ var _       = require('underscore');
 var app     = express();
 var http    = require('http').Server(app);
 
-function pack() {
-  var args = [].slice.call(arguments);
-  var last = args.pop();
+// TODO useful function not needed right now
+//function pack() {
+  //var args = [].slice.call(arguments);
+  //var last = args.pop();
 
-  return last.push.apply(args);
-};
+  //return last.push.apply(args);
+//};
 
 function curry(fn) {
   var args = Array.prototype.slice.call(arguments, 1);
@@ -22,44 +23,71 @@ function curry(fn) {
   };
 };
 
-function handleIndex(message, bus) {
-  app.models.message.find({}, function(err, response) {
-    _.each(response, function(r) {
-      var restful_r = { action: 'create', params: r }
-      bus.push(restful_r);
-    });
-
-  });
-}
-var index_message = function(message, upstream_bus, downstream_bus) {
-  return handleIndex(message, upstream_bus);
-};
-
 function handleCreate(message, bus) {
-  console.log('at create');
   app.models.message.create(message).exec(function(err, response) {
-    console.log('response from database', response);
-    var restful_r = { action: 'create', params: response };
-    //console.log('outbound bus foo', bus['foo']);
+    var restful_r = rest('create', response);
     bus.push(restful_r);
   });
 }
+
+function handleIndex(message, bus) {
+  app.models.message.find({}, function(err, response) {
+    _.each(response, function(r) {
+      var restful_r = rest('create', r);
+      bus.push(restful_r);
+    });
+  });
+}
+
+function handleUpdate(message, bus) {
+  app.models.message.update(message.criteria, message.values, function(err, response) {
+    _.each(response, function(r) {
+      var restful_r = rest('update', r);
+      bus.push(restful_r);
+    });
+  });
+}
+
+function handleDestroy(message, bus) {
+  app.models.message.destroy(message.criteria, function(err, response) {
+    _.each(response, function(r) {
+      var restful_r = rest('destroy', r);
+      console.log(restful_r);
+      bus.push(restful_r);
+    });
+  });
+}
+
 var create_message = function(message, upstream_bus, downstream_bus) {
   return handleCreate(message, downstream_bus);
 };
 
-function activateController(downstream_bus,
-                            controller,
-                            message,
-                            upstream_bus) {
-  var action = message.action;
+var index_message = function(message, upstream_bus, downstream_bus) {
+  return handleIndex(message, upstream_bus);
+};
 
-  console.log('begin', action);
-  console.log('message', message);
-  console.log('upstream bus', upstream_bus);
-  console.log('downbus', downstream_bus);
+var update_message = function(message, upstream_bus, downstream_bus) {
+  return handleUpdate(message, downstream_bus);
+};
+
+var destroy_message = function(message, upstream_bus, downstream_bus) {
+  return handleDestroy(message, downstream_bus);
+};
+
+function activateController(
+                            controller,
+                            downstream_bus,
+                            message,
+                            upstream_bus
+                           ) {
+  //var action = message.action;
+
+  //console.log('begin', action);
+  //console.log('message', message);
+  //console.log('upstream bus', upstream_bus);
+  //console.log('downbus', downstream_bus);
   //console.log('controller', controller);
-  controller[action](message.params, upstream_bus, downstream_bus);
+  controller[message.action](message.params, upstream_bus, downstream_bus);
 }
 
 function rest(action, message) {
@@ -90,7 +118,7 @@ var config = {
     },
   },
   defaults: {
-    migrate: 'safe'
+    migrate: 'drop'
   }
 };
 
@@ -106,17 +134,19 @@ baconified = require('./routes/restful-socket').add_channel('message', http);
 http = baconified.http;
 
 var outgoing_broadcast   = baconified.outgoing_broadcast
-outgoing_broadcast.foo = 'downstream';
+//outgoing_broadcast.foo = 'downstream';
 var incoming_from_client = baconified.incoming_messages
 var incoming_connections = baconified.incoming_connections
 
 var controller = {
-  index: index_message,
-  create: create_message
+  create:  create_message,
+  index:   index_message,
+  update:  update_message,
+  destroy: destroy_message
 }
 
-var messageController = curry(activateController, outgoing_broadcast);
-var mainController    = curry(messageController, controller);
+//var messageController = curry(activateController, outgoing_broadcast);
+var mainController     = curry(activateController, controller, outgoing_broadcast);
 
 var main_message_queue = Bacon.zipAsArray([incoming_from_client,
                                            incoming_connections])
@@ -129,8 +159,8 @@ var main_message_queue = Bacon.zipAsArray([incoming_from_client,
 
 // TODO: debug output
 outgoing_broadcast.onValue(function(msg) {console.log("broadcasting:", msg)});
-incoming_from_client.onValue(function(msg) {console.log("incoming_from_client:", msg)});
-incoming_connections.onValue(function(msg) {console.log("incoming_connections:", msg)});
+//incoming_from_client.onValue(function(msg) {console.log("incoming_from_client:", msg)});
+//incoming_connections.onValue(function(msg) {console.log("incoming_connections:", msg)});
 //mapped_to_database.onValue(function(msg) {console.log("to database:", msg)});
 
 // TODO: for testing
