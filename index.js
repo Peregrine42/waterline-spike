@@ -48,12 +48,10 @@ var create_message = function(message, upstream_bus, downstream_bus) {
   return handleCreate(message, downstream_bus);
 };
 
-function activateController(
-                            downstream_bus,
+function activateController(downstream_bus,
                             controller,
                             message,
-                            upstream_bus
-                            ) {
+                            upstream_bus) {
   var action = message.action;
 
   console.log('begin', action);
@@ -92,7 +90,7 @@ var config = {
     },
   },
   defaults: {
-    migrate: 'drop'
+    migrate: 'safe'
   }
 };
 
