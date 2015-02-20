@@ -26,9 +26,9 @@ $('form').submit(function(){
 });
 
 socket.on(channel, function(message){
-  var msg = params(message, 'content');
-
+  console.log(message);
+  var msg = message.params.content;
   $('#messages').append($('<li>').text(msg));
 });
 
-socket.emit(channel, rest('index', {});
+socket.emit(channel, rest('index', {}));

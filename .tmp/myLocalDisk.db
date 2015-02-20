@@ -2,31 +2,28 @@
   "data": {
     "message": [
       {
-        "action": "create",
-        "params": {
-          "content": "hi"
-        },
-        "createdAt": "2015-02-19T09:56:20.525Z",
-        "updatedAt": "2015-02-19T09:56:20.525Z",
-        "id": 1
+        "content": "hi",
+        "createdAt": "2015-02-20T02:29:08.140Z",
+        "updatedAt": "2015-02-20T02:29:08.140Z",
+        "id": 81
       },
       {
-        "action": "create",
-        "params": {
-          "content": "yo"
-        },
-        "createdAt": "2015-02-19T09:56:49.428Z",
-        "updatedAt": "2015-02-19T09:56:49.428Z",
-        "id": 2
+        "content": "there",
+        "createdAt": "2015-02-20T02:29:12.073Z",
+        "updatedAt": "2015-02-20T02:29:12.073Z",
+        "id": 82
       },
       {
-        "action": "create",
-        "params": {
-          "content": "hi"
-        },
-        "createdAt": "2015-02-19T09:57:54.576Z",
-        "updatedAt": "2015-02-19T09:57:54.576Z",
-        "id": 3
+        "content": "oh yes",
+        "createdAt": "2015-02-20T02:29:19.340Z",
+        "updatedAt": "2015-02-20T02:29:19.340Z",
+        "id": 83
+      },
+      {
+        "content": "woooohoooo!",
+        "createdAt": "2015-02-20T02:29:40.639Z",
+        "updatedAt": "2015-02-20T02:29:40.639Z",
+        "id": 84
       }
     ]
   },
@@ -51,7 +48,7 @@
   },
   "counters": {
     "message": {
-      "id": 3
+      "id": 84
     }
   }
 }
