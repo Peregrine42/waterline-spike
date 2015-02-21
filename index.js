@@ -225,22 +225,33 @@ var current_clients = Bacon.update([],
     connecting_clients, add_to_array,
     disconnecting_clients, remove_from_array);
 
-var incoming_database_changes = messages.map('.content');
+//var incoming_database_changes = messages.map('.content');
 
-var database_responses       = new Bacon.Bus();
-var database_read_responses  = database_responses.filter(read_only);
-var database_write_responses = database_responses.reject(read_only);
-var incoming_read_sockets    = messages.filter(read_only).map('.author');
-var outgoing_read_responses  = Bacon.zipAsArray(database_read_responses,
-                                                incoming_read_sockets)
-                                    .map(function(array) {return {author: array[1], content: array[0]}})
+//var database_responses       = new Bacon.Bus();
+//var database_read_responses  = database_responses.filter(read_only);
+//var database_write_responses = database_responses.reject(read_only);
+//var incoming_read_sockets    = messages.filter(read_only).map('.author');
+//var outgoing_read_responses  = Bacon.zipAsArray(database_read_responses,
+                                                //incoming_read_sockets)
+                                    //.map(function(array) {return {author: array[1], content: array[0]}})
 
-var outgoing_writes = database_write_responses.flatMap(with_clients);
+//var outgoing_writes = database_write_responses.flatMap(with_clients);
 
-incoming_database_changes.onValue(send_to_database);
-outgoing_read_responses.onValue(send_to_socket);
-outgoing_writes.onValue(send_to_socket);
+//incoming_database_changes.onValue(send_to_database);
+//outgoing_read_responses.onValue(send_to_socket);
+//outgoing_writes.onValue(send_to_socket);
 
+var read_commands_for_db  = messages.filter(read_only_messages).map('.content');
+var write_commands_for_db = messages.reject(read_only_messages).map('.content');
+
+read_commands_for_db.onValue(read_from_database);
+write_commands_for_db.onValue(write_to_database);
+
+// create a stream of read responses from db, paired with the correct socket
+// create a stream of write responses from db, paired with an array of sockets
+
+read_responses.onValue(send_back_to_socket);
+write_reponses.onValue(broadcast);
 
 // TODO: for testing
 //setTimeout(function() { }, 5000);
