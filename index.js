@@ -6,14 +6,6 @@ var _       = require('underscore');
 var app     = express();
 var http    = require('http').Server(app);
 
-// TODO useful function not needed right now
-//function pack() {
-  //var args = [].slice.call(arguments);
-  //var last = args.pop();
-
-  //return last.push.apply(args);
-//};
-
 function curry(fn) {
   var args = Array.prototype.slice.call(arguments, 1);
 
@@ -130,8 +122,6 @@ app = require('./routes/handlebars').modify(app);
 
 app.use(express.static(__dirname + '/public'));
 
-baconified = require('./routes/restful-socket').add_channel('message', http);
-http = baconified.http;
 
 var outgoing_broadcast   = baconified.outgoing_broadcast
 //outgoing_broadcast.foo = 'downstream';
@@ -162,6 +152,61 @@ outgoing_broadcast.onValue(function(msg) {console.log("broadcasting:", msg)});
 //incoming_from_client.onValue(function(msg) {console.log("incoming_from_client:", msg)});
 //incoming_connections.onValue(function(msg) {console.log("incoming_connections:", msg)});
 //mapped_to_database.onValue(function(msg) {console.log("to database:", msg)});
+
+function send_to_socket(message) {
+  socket = message[0];
+  content = message[1];
+
+  socket.push(content);
+}
+
+function read_only(message) {
+  if (message.txt.action == 'get') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function asArray(first, second) {
+  return [first, second];
+}
+
+function add_to_array(contents, new_item) {
+  return contents.concat(new_item)
+}
+
+function remove_from_array(contents, removed_item) {
+  return _.remove(contents, removed_item)
+}
+
+function with_clients(response) {
+  return Bacon.fromArray(current_clients);
+}
+
+baconified = require('./routes/restful-socket').add_channel('message', http);
+http = baconified.http;
+
+messages = baconified.messages;
+connecting_clients    = baconified.clients;
+disconnecting_clients = baconified.disconnecting_clients;
+
+current_clients = Bacon.update([],
+    connecting_clients, add_to_array,
+    disconnecting_clients, remove_from_array);
+
+incoming_database_changes = messages.map('.txt');
+
+incoming_read_sockets     = messages.filter(read_only).map('.author');
+outgoing_read_responses   = Bacon.zipAsArray(database_read_responses,
+                                             incoming_read_sockets)
+
+outgoing_writes = database_write_responses.flatMap(with_clients);
+
+incoming_database_changes.onValue(send_to_database);
+outgoing_db_read_responses.onValue(send_to_socket);
+outgoing_writes.onValue(send_to_socket);
+
 
 // TODO: for testing
 //setTimeout(function() { }, 5000);

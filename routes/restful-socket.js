@@ -1,36 +1,39 @@
 var socketio = require('socket.io')
 var Bacon    = require('baconjs')
 
+function baconify(channel, socket) {
+  var bus = new Bacon.Bus();
+  bus.onValue(socket.emit, channel);
+  return bus;
+}
 
-module.exports.add_channel = function(channel, http) {
+module.exports.add_channel = function(
+                                      channel,
+                                      http,
+                                      ) {
   var io = socketio(http);
 
-  var broadcast            = new Bacon.Bus();
-  var incoming_messages    = new Bacon.Bus();
-  var incoming_connections = new Bacon.Bus();
+  var connections = Bacon.fromBinder(function(sink) {
+    io.on('connection', sink);
+  });
 
-  io.on('connection', function(socket) {
-    socket.on(channel, function(msg) {
-      var outgoing = new Bacon.Bus();
-      outgoing.onValue(function(msg) {
-        socket.emit(channel, msg);
+  var disconnections = Bacon.fromBinder(function(sink) {
+    io.on('disconnect', sink);
+  });
+
+  var clients = connections.map(channel, baconify);
+  var disconnecting_clients = disconnections.map(channel, baconify);
+
+  var messages = connections.flatMap(function(socket) {
+    return Bacon.fromBinder(function(sink) {
+      socket.on('message', function(txt) {
+        sink({ author: baconify(channel, socket), txt: txt });
       });
-      incoming_connections.push(outgoing);
-
-      incoming_messages.push(msg);
     });
-
-    //socket.on('disconnect', function () {
-    //});
   });
 
-  broadcast.onValue(function(msg) {
-    io.emit(channel, msg);
-  });
-
-  return { 'http': http,
-           'outgoing_broadcast':   broadcast,
-           'incoming_messages':    incoming_messages,
-           'incoming_connections': incoming_connections,
-         };
+  return { 'http'     : http,
+           'messages' : messages,
+           'clients'  : clients,
+           'disconnecting_clients' : disconnecting_clients };
 }
