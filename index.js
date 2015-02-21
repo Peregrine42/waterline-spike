@@ -184,24 +184,36 @@ function with_clients(response) {
   return Bacon.fromArray(current_clients);
 }
 
-baconified = require('./routes/restful-socket').add_channel('message', http);
+controller = {
+  'get':  message_get,
+  'post': message_post,
+  'delete': message_delete
+}
+
+function send_to_database(message) {
+  var action = message.action;
+
+  controller[action](message.params);
+}
+
+var baconified = require('./routes/restful-socket').add_channel('message', http);
 http = baconified.http;
 
-messages = baconified.messages;
-connecting_clients    = baconified.clients;
-disconnecting_clients = baconified.disconnecting_clients;
+var messages              = baconified.messages;
+var connecting_clients    = baconified.clients;
+var disconnecting_clients = baconified.disconnecting_clients;
 
-current_clients = Bacon.update([],
+var current_clients = Bacon.update([],
     connecting_clients, add_to_array,
     disconnecting_clients, remove_from_array);
 
-incoming_database_changes = messages.map('.txt');
+var incoming_database_changes = messages.map('.content');
 
-incoming_read_sockets     = messages.filter(read_only).map('.author');
-outgoing_read_responses   = Bacon.zipAsArray(database_read_responses,
-                                             incoming_read_sockets)
+var incoming_read_sockets     = messages.filter(read_only).map('.author');
+var outgoing_read_responses   = Bacon.zipAsArray(database_read_responses,
+                                                 incoming_read_sockets)
 
-outgoing_writes = database_write_responses.flatMap(with_clients);
+var outgoing_writes = database_write_responses.flatMap(with_clients);
 
 incoming_database_changes.onValue(send_to_database);
 outgoing_db_read_responses.onValue(send_to_socket);

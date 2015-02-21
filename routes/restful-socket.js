@@ -7,10 +7,8 @@ function baconify(channel, socket) {
   return bus;
 }
 
-module.exports.add_channel = function(
-                                      channel,
-                                      http,
-                                      ) {
+module.exports.add_channel = function(channel,
+                                      http) {
   var io = socketio(http);
 
   var connections = Bacon.fromBinder(function(sink) {
@@ -27,7 +25,7 @@ module.exports.add_channel = function(
   var messages = connections.flatMap(function(socket) {
     return Bacon.fromBinder(function(sink) {
       socket.on('message', function(txt) {
-        sink({ author: baconify(channel, socket), txt: txt });
+        sink({ author: baconify(channel, socket), content: txt });
       });
     });
   });
