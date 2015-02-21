@@ -1,5 +1,7 @@
 var Waterline = require('waterline');
-var Message = require('./models/message');
+var model     = require('./models/message');
+var database_write_responses = model.changes;
+var Message   = model.Message;
 var Bacon   = require('baconjs')
 var express = require('express');
 var _       = require('underscore');
@@ -154,14 +156,14 @@ outgoing_broadcast.onValue(function(msg) {console.log("broadcasting:", msg)});
 //mapped_to_database.onValue(function(msg) {console.log("to database:", msg)});
 
 function send_to_socket(message) {
-  socket = message[0];
-  content = message[1];
+  socket = message.socket;
+  content = message.content;
 
   socket.push(content);
 }
 
-function read_only(message) {
-  if (message.txt.action == 'get') {
+function read_only(action) {
+  if (action == 'get') {
     return true;
   } else {
     return false;
@@ -184,24 +186,40 @@ function with_clients(response) {
   return Bacon.fromArray(current_clients);
 }
 
-controller = {
-  'get':  message_get,
-  'post': message_post,
-  'delete': message_delete
-}
+//controller = {
+  //'get':  message_get,
+  //'post': message_post,
+  //'delete': message_delete
+//}
+
 
 function send_to_database(message) {
   var action = message.action;
 
-  controller[action](message.params);
+  var params = message.params;
+
+  var db_response_handler = function(err, response) {
+    database_responses.push({ action: action, params: response })
+  }
+
+  params.push(db_response_handler);
+  app.models.message[action].apply(params);
 }
+
+//{
+  //author: socket,
+  //content: {
+             //action: 'create',
+             //params: []
+           //}
+//}
 
 var baconified = require('./routes/restful-socket').add_channel('message', http);
 http = baconified.http;
 
-var messages              = baconified.messages;
-var connecting_clients    = baconified.clients;
-var disconnecting_clients = baconified.disconnecting_clients;
+var messages              = baconified.messages; // socket, message pairs
+var connecting_clients    = baconified.clients;  // buses to each client
+var disconnecting_clients = baconified.disconnecting_clients; // buses to each disconnecting client
 
 var current_clients = Bacon.update([],
     connecting_clients, add_to_array,
@@ -209,14 +227,18 @@ var current_clients = Bacon.update([],
 
 var incoming_database_changes = messages.map('.content');
 
-var incoming_read_sockets     = messages.filter(read_only).map('.author');
-var outgoing_read_responses   = Bacon.zipAsArray(database_read_responses,
-                                                 incoming_read_sockets)
+var database_responses       = new Bacon.Bus();
+var database_read_responses  = database_responses.filter(read_only);
+var database_write_responses = database_responses.reject(read_only);
+var incoming_read_sockets    = messages.filter(read_only).map('.author');
+var outgoing_read_responses  = Bacon.zipAsArray(database_read_responses,
+                                                incoming_read_sockets)
+                                    .map(function(array) {return {author: array[1], content: array[0]}})
 
 var outgoing_writes = database_write_responses.flatMap(with_clients);
 
 incoming_database_changes.onValue(send_to_database);
-outgoing_db_read_responses.onValue(send_to_socket);
+outgoing_read_responses.onValue(send_to_socket);
 outgoing_writes.onValue(send_to_socket);
 
 
