@@ -1,5 +1,3 @@
-Error.stackTraceLimit = Infinity;
-
 var Waterline = require('waterline');
 var Message   = require('./models/message');
 var Bacon   = require('baconjs')
@@ -42,30 +40,47 @@ var broadcast_bus = baconified.broadcast;
 
 function read_only_messages(message) {
   console.log('filtering message', message);
-  if (message.content.action == 'find') {
+  if (message.content.action === 'find') {
     return true;
   };
   return false;
 }
 
+function write_only_messages(message) {
+  return true;
+}
+
 function database_request(message) {
   console.log('handling db request', message);
-  var action = message.content.action;
-  var args = message.content.args;
-  console.log(args);
   return Bacon.fromBinder(function(sink) {
-    var the_call = app.models.message[action];
-    var bind_args = [];
-    bind_args.push(the_call, app.models.message, args);
-    console.log(_.bind);
-    var func = _.bind.apply(bind_args);
-    func(function(err, response) {
-      sink({ author: message.author, content: { action: response} })
+    //console.log('message', message);
+    //console.log('content', message.content);
+    //var action = message.content.action;
+    var args = message.content.args;
+    //console.log('action', action);
+    //console.log('args inside', args);
+    //app.models.message[action].apply(this, args).exec(function(err, response) {
+      //console.log('sunk', {author: message.author, content: {action:response}});
+      //sink({ author: message.author, content: { action: response} })
+    //})
+    app.models.message.find(args[0]).exec(function(err, response) {
+      sink({ author: message.author, content: { action: 'find', args: response} });
     });
+    //return app.models.message.find(args[0]).exec(sink);
+  //return Bacon.fromNodeCallback(app.models.message.find, args[0]).flatMap(function(responses) {
+    //return Bacon.fromArray(response);
   });
 }
 
+function exec_it(response) {
+  return Bacon.fromBinder(function(sink) {
+      sink(response);
+  });
+}
+
+
 function send_to_author(message) {
+  console.log('sending out', message.content);
   var bus = message.author;
   bus.push(message.content);
 }
@@ -75,15 +90,19 @@ function set_author(message, new_author) {
   return message;
 }
 
-var read_commands_for_db  = messages.filter(read_only_messages);
-var write_commands_for_db = messages.filter(read_only_messages).not()
-                                    .map(set_author, broadcast_bus);
+var read_responses  = messages.filter(read_only_messages)
+                              .flatMap(database_request);
 
-read_responses  = read_commands_for_db.flatMap(database_request);
-write_responses = write_commands_for_db.flatMap(database_request);
+//console.log(read_responses);
+                              //.onValue(function(response) {
+                                //console.log('response:', response); return response });
+var write_responses = messages.filter(write_only_messages)
+                              //.map(set_author, broadcast_bus)
+                              //.flatMap(database_request);
 
 read_responses.onValue(send_to_author);
-write_responses.onValue(send_to_author);
+//write_responses.onValue(send_to_author);
+write_responses.onValue(function(message) {console.log(message)});
 
 orm.initialize(config, function(err, models) {
   if(err) throw err;

@@ -20,7 +20,9 @@ module.exports.add_channel = function(channel,
   var messages = connections.flatMap(function(socket) {
     return Bacon.fromBinder(function(sink) {
       socket.on('message', function(txt) {
-        sink({ author: baconify(channel, socket), content: txt });
+        var message = { author: baconify(channel, socket), content: txt };
+        console.log('incoming message', message);
+        sink(message);
       });
     });
   });

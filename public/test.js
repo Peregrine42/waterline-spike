@@ -33,7 +33,7 @@ $('#deleter').click(function() {
 });
 
 socket.on(channel, function(message){
-  console.log(message);
+  console.log('received:', message);
   if (message.action == 'create') {
     var msg = message.params.content;
     $('#messages').append($('<li id="' + message.params.id + '">').text(msg));
