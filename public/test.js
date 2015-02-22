@@ -1,7 +1,7 @@
-function rest(action, message) {
+function message(action, args) {
   return {
     'action': action,
-    'params': message
+    'args': [args]
   };
 }
 
@@ -48,4 +48,4 @@ socket.on(channel, function(message){
   }
 });
 
-socket.emit(channel, rest('index', {}));
+socket.emit(channel, message('find', {}));

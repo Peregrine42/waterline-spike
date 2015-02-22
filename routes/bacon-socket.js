@@ -3,7 +3,9 @@ var Bacon    = require('baconjs')
 
 function baconify(channel, socket) {
   var bus = new Bacon.Bus();
-  bus.onValue(socket.emit, channel);
+  bus.onValue(function(message) {
+    socket.emit(channel, message);
+  });
   return bus;
 }
 
@@ -15,13 +17,6 @@ module.exports.add_channel = function(channel,
     io.on('connection', sink);
   });
 
-  var disconnections = Bacon.fromBinder(function(sink) {
-    io.on('disconnect', sink);
-  });
-
-  var clients = connections.map(channel, baconify);
-  var disconnecting_clients = disconnections.map(channel, baconify);
-
   var messages = connections.flatMap(function(socket) {
     return Bacon.fromBinder(function(sink) {
       socket.on('message', function(txt) {
@@ -30,8 +25,9 @@ module.exports.add_channel = function(channel,
     });
   });
 
-  return { 'http'     : http,
-           'messages' : messages,
-           'clients'  : clients,
-           'disconnecting_clients' : disconnecting_clients };
+  var broadcast = baconify(channel, io);
+
+  return { http      : http,
+           messages  : messages,
+           broadcast : broadcast }
 }
