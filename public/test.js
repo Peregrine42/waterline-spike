@@ -20,7 +20,7 @@ $('form').submit(function(){
   var text = $('#m').val();
   $('#m').val('');
 
-  socket.emit(channel, rest('create', make_message(text)));
+  socket.emit(channel, rest('create', message(text)));
 
   return false;
 });

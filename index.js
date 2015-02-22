@@ -55,9 +55,9 @@ function database_request(message) {
   return Bacon.fromBinder(function(sink) {
     //console.log('message', message);
     //console.log('content', message.content);
-    //var action = message.content.action;
+    var action = message.content.action;
     var args = message.content.args;
-    //console.log('action', action);
+    console.log('action', action);
     //console.log('args inside', args);
     //app.models.message[action].apply(this, args).exec(function(err, response) {
       //console.log('sunk', {author: message.author, content: {action:response}});
@@ -72,17 +72,18 @@ function database_request(message) {
   });
 }
 
-function exec_it(response) {
-  return Bacon.fromBinder(function(sink) {
-      sink(response);
-  });
-}
+//function exec_it(response) {
+  //return Bacon.fromBinder(function(sink) {
+      //sink(response);
+  //});
+//}
 
 
 function send_to_author(message) {
   console.log('sending out', message.content);
   var bus = message.author;
   bus.push(message.content);
+  //bus.push(Bacon.noMore);
 }
 
 function set_author(message, new_author) {
