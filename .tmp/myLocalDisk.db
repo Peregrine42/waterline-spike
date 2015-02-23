@@ -1,6 +1,19 @@
 {
   "data": {
-    "message": []
+    "message": [
+      {
+        "content": "foo",
+        "createdAt": "2015-02-23T09:07:28.881Z",
+        "updatedAt": "2015-02-23T09:07:46.480Z",
+        "id": 143
+      },
+      {
+        "content": "hello",
+        "createdAt": "2015-02-23T09:07:58.931Z",
+        "updatedAt": "2015-02-23T09:07:58.931Z",
+        "id": 145
+      }
+    ]
   },
   "schema": {
     "message": {
@@ -20,7 +33,7 @@
   },
   "counters": {
     "message": {
-      "id": 113
+      "id": 145
     }
   }
 }

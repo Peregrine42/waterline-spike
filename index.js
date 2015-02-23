@@ -43,11 +43,12 @@ function read_only_messages(message) {
   if (message.content.action === 'find') {
     return true;
   };
+  console.log('returning false');
   return false;
 }
 
 function write_only_messages(message) {
-  return true;
+  return !read_only_messages(message);
 }
 
 function database_request(message) {
@@ -58,14 +59,29 @@ function database_request(message) {
     var action = message.content.action;
     var args = message.content.args;
     console.log('action', action);
+    console.log('args', args);
     //console.log('args inside', args);
     //app.models.message[action].apply(this, args).exec(function(err, response) {
       //console.log('sunk', {author: message.author, content: {action:response}});
       //sink({ author: message.author, content: { action: response} })
     //})
-    app.models.message.find(args[0]).exec(function(err, response) {
-      sink({ author: message.author, content: { action: 'find', args: response} });
-    });
+    if (action == 'find') {
+      app.models.message.find(args[0]).exec(function(err, response) {
+        sink({ author: message.author, content: { action: 'find', args: response} });
+      });
+    } else if (action == 'create') {
+      app.models.message.create(args[0]).exec(function(err, response) {
+        sink({ author: message.author, content: { action: 'create', args: response} });
+      });
+    } else if (action == 'update') {
+      app.models.message.update(args[0], args[1]).exec(function(err, response) {
+        sink({ author: message.author, content: { action: 'update', args: response} });
+      });
+    } else if (action == 'destroy') {
+      app.models.message.destroy(args[0]).exec(function(err, response) {
+        sink({ author: message.author, content: { action: 'destroy', args: response} });
+      });
+    };
     //return app.models.message.find(args[0]).exec(sink);
   //return Bacon.fromNodeCallback(app.models.message.find, args[0]).flatMap(function(responses) {
     //return Bacon.fromArray(response);
@@ -86,7 +102,7 @@ function send_to_author(message) {
   //bus.push(Bacon.noMore);
 }
 
-function set_author(message, new_author) {
+function set_author(new_author, message) {
   message.author = new_author;
   return message;
 }
@@ -98,12 +114,12 @@ var read_responses  = messages.filter(read_only_messages)
                               //.onValue(function(response) {
                                 //console.log('response:', response); return response });
 var write_responses = messages.filter(write_only_messages)
-                              //.map(set_author, broadcast_bus)
-                              //.flatMap(database_request);
+                              .map(set_author, broadcast_bus)
+                              .flatMap(database_request);
 
 read_responses.onValue(send_to_author);
-//write_responses.onValue(send_to_author);
-write_responses.onValue(function(message) {console.log(message)});
+write_responses.onValue(send_to_author);
+//write_responses.onValue(function(message) {console.log(message)});
 
 orm.initialize(config, function(err, models) {
   if(err) throw err;
