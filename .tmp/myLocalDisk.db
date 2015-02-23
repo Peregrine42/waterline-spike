@@ -2,10 +2,10 @@
   "data": {
     "message": [
       {
-        "content": "hi",
-        "createdAt": "2015-02-23T10:56:19.572Z",
-        "updatedAt": "2015-02-23T10:56:19.572Z",
-        "id": 148
+        "content": "foo",
+        "createdAt": "2015-02-23T14:50:35.671Z",
+        "updatedAt": "2015-02-23T14:50:58.866Z",
+        "id": 149
       }
     ]
   },
@@ -27,7 +27,7 @@
   },
   "counters": {
     "message": {
-      "id": 148
+      "id": 151
     }
   }
 }
