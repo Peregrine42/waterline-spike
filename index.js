@@ -29,6 +29,7 @@ orm.loadCollection(Message);
 
 app = require('./routes/root').modify(app);
 app = require('./routes/handlebars').modify(app);
+app = require('./routes/demo').modify(app);
 
 app.use(express.static(__dirname + '/public'));
 
