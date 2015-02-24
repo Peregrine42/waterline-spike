@@ -71,11 +71,6 @@ function database_request(message) {
         sink({ author: message.author, content: { action: 'find', args: response} });
       });
     } else if (action == 'create') {
-      payload = args[0];
-      if (payload.content == "all systems go") {
-        payload.x = 100;
-        payload.y = 50;
-      }
       app.models.message.create(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'create', args: response} });
       });

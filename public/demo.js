@@ -41,9 +41,24 @@ function updateNode(jsPlumb, mainContainer, node_message, node_settings) {
 
 function deleteNode(jsPlumb, mainContainer, node_message, node_settings) {
   var id = node_message.id;
+  console.log(node_message);
 
   var e = $("#" + node_settings.id_prefix + id);
   e.remove();
+}
+
+function deleteNodes(jsPlumb, mainContainer, node_messages, node_settings) {
+  for (var i = 0; i < node_messages.length; i++) {
+    var message = node_messages[i];
+    deleteNode(jsPlumb, mainContainer, message, node_settings);
+  }
+}
+
+function updateNodes(jsPlumb, mainContainer, node_messages, node_settings) {
+  for (var i = 0; i < node_messages.length; i++) {
+    var message = node_messages[i];
+    updateNode(jsPlumb, mainContainer, message, node_settings);
+  }
 }
 
 jsPlumb.ready(function() {
@@ -85,17 +100,23 @@ jsPlumb.ready(function() {
     createNode(jsPlumb, mainContainer, message, node_settings);
   });
   node_buses.find.onValue(function(message) {
-    findNodes(jsPlumb, mainContainer, message, node_settings);
+    readNodes(jsPlumb, mainContainer, message, node_settings);
   });
   node_buses.update.onValue(function(message) {
-    updateNode(jsPlumb, mainContainer, message, node_settings);
+    updateNodes(jsPlumb, mainContainer, message, node_settings);
   });
   node_buses.destroy.onValue(function(message) {
-    destroyNode(jsPlumb, mainContainer, message, node_settings);
+    deleteNodes(jsPlumb, mainContainer, message, node_settings);
   });
 
   socket.on(channel, function(message) {
     message_handler(message, node_buses);
   });
+
+  var initial_request = {
+    action: 'find',
+    args: {}
+  }
+  socket.emit(channel, initial_request);
 
 });

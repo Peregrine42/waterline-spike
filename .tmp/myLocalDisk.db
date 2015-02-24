@@ -2,18 +2,20 @@
   "data": {
     "message": [
       {
-        "content": "hi",
-        "createdAt": "2015-02-24T00:24:49.379Z",
-        "updatedAt": "2015-02-24T00:24:49.379Z",
-        "id": 152
+        "content": "foo",
+        "x": 50,
+        "y": 60,
+        "createdAt": "2015-02-24T00:47:18.896Z",
+        "updatedAt": "2015-02-24T00:47:38.461Z",
+        "id": 165
       },
       {
-        "content": "all systems go",
-        "x": 100,
+        "content": "there",
+        "x": 150,
         "y": 50,
-        "createdAt": "2015-02-24T00:26:11.682Z",
-        "updatedAt": "2015-02-24T00:26:11.682Z",
-        "id": 153
+        "createdAt": "2015-02-24T00:47:29.085Z",
+        "updatedAt": "2015-02-24T00:47:29.085Z",
+        "id": 166
       }
     ]
   },
@@ -35,7 +37,7 @@
   },
   "counters": {
     "message": {
-      "id": 153
+      "id": 166
     }
   }
 }

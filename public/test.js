@@ -1,3 +1,6 @@
+global_x = 50;
+global_y = 50;
+
 function make_command(action, args) {
   return {
     'action': action,
@@ -20,7 +23,13 @@ $('form').submit(function(){
   var text = $('#m').val();
   $('#m').val('');
 
-  socket.emit(channel, make_command('create', [{ 'content': text }]));
+  socket.emit(channel, make_command('create', [{
+    'content': text,
+    'x': global_x,
+    'y': global_y
+  }]));
+
+  global_x += 100;
 
   return false;
 });
@@ -35,7 +44,7 @@ $('#deleter').click(function() {
 function append_message(message) {
   $('#messages').append($('<li id="' + message.id + '">').text(message.content));
   $('#'+ message.id).click(function() {
-    socket.emit(channel, make_command('update', [{ 'id': message.id }, {'content':'foo'}]));
+    socket.emit(channel, make_command('update', [{ 'id': message.id }, {'content':'foo', 'y': message.y + 10 }]));
   });
 }
 
