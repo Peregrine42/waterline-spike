@@ -2,10 +2,18 @@
   "data": {
     "message": [
       {
-        "content": "foo",
-        "createdAt": "2015-02-23T14:50:35.671Z",
-        "updatedAt": "2015-02-23T14:50:58.866Z",
-        "id": 149
+        "content": "hi",
+        "createdAt": "2015-02-24T00:24:49.379Z",
+        "updatedAt": "2015-02-24T00:24:49.379Z",
+        "id": 152
+      },
+      {
+        "content": "all systems go",
+        "x": 100,
+        "y": 50,
+        "createdAt": "2015-02-24T00:26:11.682Z",
+        "updatedAt": "2015-02-24T00:26:11.682Z",
+        "id": 153
       }
     ]
   },
@@ -27,7 +35,7 @@
   },
   "counters": {
     "message": {
-      "id": 151
+      "id": 153
     }
   }
 }

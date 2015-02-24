@@ -1,21 +1,23 @@
 <style>
 #diagramContainer {
   padding: 20px;
-  width:80%; height: 400px;
+  width:100%; height: 600px;
   border: 1px solid gray;
+  position: relative;
 }
 
-.item {
+.node {
   position: absolute;
-  height:80px; width: 80px;
+  height:100px; width: 100px;
   border: 1px solid blue;
+  border-radius: 50%;
 }
 </style>
 
 Hello Demo!
 <div id="diagramContainer">
 </div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
-<script src="//code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jsPlumb/1.4.1/jquery.jsPlumb-1.4.1-all.js"></script>
+<script src="/jquery/jquery-1.9.1.js"></script>
+<script src="/dom.jsPlumb-1.7.2.js"></script>
+<script src="/Bacon.js"></script>
 <script src="/demo.js"></script>

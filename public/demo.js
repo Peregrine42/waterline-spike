@@ -1,62 +1,101 @@
+function message_handler(message, buses) {
+  console.log('received:', message);
+  var msg = message.args;
+  buses[message.action].push(msg);
+}
+
+function createNode(jsPlumb, mainContainer, node_message, node_settings) {
+  var id = node_message.id;
+  var x = node_message.x;
+  var y = node_message.y;
+
+  var e = $('<div></div>');
+  $("#" + mainContainer).append(e);
+  e.attr("id", node_settings.id_prefix + id);
+  e.addClass(node_settings.css_class);
+  e.css({ "top": y, "left": x });
+
+  jsPlumb.draggable(e, { containment: "parent" });
+
+  return e;
+}
+
+function readNodes(jsPlumb, mainContainer, node_messages, node_settings) {
+  $("." + node_settings.css_class).remove();
+
+  for (var i = 0; i < node_messages.length; i++) {
+    var message = node_messages[i];
+    createNode(jsPlumb, mainContainer, message, node_settings);
+  }
+}
+
+function updateNode(jsPlumb, mainContainer, node_message, node_settings) {
+  var id = node_message.id;
+
+  var x = node_message.x;
+  var y = node_message.y;
+
+  var e = $("#" + node_settings.id_prefix + id);
+  e.css({ "top": y, "left": x });
+}
+
+function deleteNode(jsPlumb, mainContainer, node_message, node_settings) {
+  var id = node_message.id;
+
+  var e = $("#" + node_settings.id_prefix + id);
+  e.remove();
+}
+
 jsPlumb.ready(function() {
-  //jsPlumb.connect({
-    //source:"item_left",
-    //target:"item_right",
-    //endpoint:"Rectangle",
-    //connector: ["Straight"],
-    //anchor: ["Center", "Center"],
-    //endpoint:"Dot",
-    //paintStyle:{ strokeStyle:"blue", lineWidth:5 },
-    //endpointStyle:{ fillStyle:"blue" }
-  //});
+  var mainContainer = "diagramContainer";
 
-  $('diagramContainer').append("<div id='test' class='item'></div>")
-
-  var instance = jsPlumb.getInstance({
-    DragOptions: { zIndex: 500000 },
-    PaintStyle:  { strokeStyle: 'blue' },
-    Anchors: ["Center"],
-    Container: "diagramContainer"
-  });
-
-  instance.doWhileSuspended(function() {
-    var exampleColor = 'green'
-    var exampleEndpoint = {
-      endpoint:"Rectangle",
-      paintStyle:{ width:25, height:21, fillStyle:exampleColor },
-      isSource:true,
-      reattach:true,
-      scope:"blue",
-      connectorStyle : {
-        gradient:{stops:[[0, exampleColor], [0.5, "#09098e"], [1, exampleColor]]},
-        lineWidth:5,
-        strokeStyle:exampleColor,
-        dashstyle:"2 2"
-      },
-      isTarget:true,
-    };
-
-    var e1 = instance.addEndpoint('test', { anchor:[0.5, 1, 0, 1] }, exampleEndpoint);
-
-    jsPlumb.fire("jsPlumbDemoLoaded", instance);
-
-  });
-
-  jsPlumb.draggable("item_left");
-
-  var common = {
-    isSource:true,
-    isTarget:true,
-    endpoint:"Dot",
-    paintStyle:{ fillStyle:"blue", strokeStyle:"blue", lineWidth:5 },
-    connector: ["Straight"]
+  var node_settings = {
+    "id_prefix": "node-",
+    "css_class": "node"
   };
 
-  jsPlumb.addEndpoint("item_left", {
-    anchors:["Center"]
-  }, common);
+  jsPlumb.setContainer($(mainContainer));
 
-  jsPlumb.addEndpoint("item_right", {
-    anchors:["Center"]
-  }, common);
+  //var nodeMessage1 = { "x": 90, "y": 120, "id": 1 }
+  //var nodeMessage2 = { "x": 500, "y": 50, "id": 2 }
+
+  //createNode(jsPlumb, mainContainer, nodeMessage1, node_settings);
+  //createNode(jsPlumb, mainContainer, nodeMessage2, node_settings);
+
+  //var nodeMessage3 = { "x": 90, "y": 120, "id": 1 }
+  //deleteNode(jsPlumb, mainContainer, nodeMessage3, node_settings);
+
+  //var nodeMessage4 = { "x": 90, "y": 140, "id": 2 }
+  //updateNode(jsPlumb, mainContainer, nodeMessage4, node_settings);
+
+  //var messages = [ nodeMessage1, nodeMessage2 ];
+  //readNodes(jsPlumb, mainContainer, messages, node_settings);
+
+  var socket = io();
+  var channel = 'message';
+
+  var node_buses = {
+    create:  new Bacon.Bus(),
+    find:    new Bacon.Bus(),
+    update:  new Bacon.Bus(),
+    destroy: new Bacon.Bus()
+  };
+
+  node_buses.create.onValue(function(message) {
+    createNode(jsPlumb, mainContainer, message, node_settings);
+  });
+  node_buses.find.onValue(function(message) {
+    findNodes(jsPlumb, mainContainer, message, node_settings);
+  });
+  node_buses.update.onValue(function(message) {
+    updateNode(jsPlumb, mainContainer, message, node_settings);
+  });
+  node_buses.destroy.onValue(function(message) {
+    destroyNode(jsPlumb, mainContainer, message, node_settings);
+  });
+
+  socket.on(channel, function(message) {
+    message_handler(message, node_buses);
+  });
+
 });
