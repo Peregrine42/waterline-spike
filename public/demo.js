@@ -4,7 +4,16 @@ function message_handler(message, buses) {
   buses[message.action].push(msg);
 }
 
-function createNode(jsPlumb, mainContainer, node_message, node_settings) {
+function make_update_message(id, x, y) {
+  return { action: "update", args: [{ id: id }, { x: x, y: y }] }
+}
+
+function createNode(jsPlumb,
+                    mainContainer,
+                    node_message,
+                    node_settings,
+                    update_bus) {
+
   var id = node_message.id;
   var x = node_message.x;
   var y = node_message.y;
@@ -13,19 +22,29 @@ function createNode(jsPlumb, mainContainer, node_message, node_settings) {
   $("#" + mainContainer).append(e);
   e.attr("id", node_settings.id_prefix + id);
   e.addClass(node_settings.css_class);
-  e.css({ "top": y, "left": x });
+  e.css({
+    "top": y,
+    "left": x,
+    "width": node_settings.width,
+    "height": node_settings.height
+  });
 
-  jsPlumb.draggable(e, { containment: "parent" });
+  jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
+      var new_x = e.pos[0];
+      var new_y = e.pos[1];
+      update_bus.push(make_update_message(id, new_x, new_y));
+    }
+  });
 
   return e;
 }
 
-function readNodes(jsPlumb, mainContainer, node_messages, node_settings) {
+function readNodes(jsPlumb, mainContainer, node_messages, node_settings, update_bus) {
   $("." + node_settings.css_class).remove();
 
   for (var i = 0; i < node_messages.length; i++) {
     var message = node_messages[i];
-    createNode(jsPlumb, mainContainer, message, node_settings);
+    createNode(jsPlumb, mainContainer, message, node_settings, update_bus);
   }
 }
 
@@ -61,12 +80,32 @@ function updateNodes(jsPlumb, mainContainer, node_messages, node_settings) {
   }
 }
 
+function center_click(node_settings, message) {
+  return {
+    x: message.x - (node_settings.width/2),
+    y: message.y - (node_settings.height/2)
+  }
+}
+
+function toMessage(e) {
+  var e = e[0];
+  console.log("message: ", e);
+  var parentOffset = $("#diagramContainer").offset();
+  var relX = e.originalEvent.pageX - (parentOffset.left);
+  var relY = e.originalEvent.pageY - Math.floor(parentOffset.top);
+  //console.log(relX);
+  //console.log(relY);
+  return { x: relX, y: relY };
+};
+
 jsPlumb.ready(function() {
   var mainContainer = "diagramContainer";
 
   var node_settings = {
     "id_prefix": "node-",
-    "css_class": "node"
+    "css_class": "node",
+    "width"    : 75,
+    "height"   : 75
   };
 
   jsPlumb.setContainer($(mainContainer));
@@ -96,11 +135,26 @@ jsPlumb.ready(function() {
     destroy: new Bacon.Bus()
   };
 
+  var update_bus = new Bacon.Bus();
+  update_bus.onValue(function(message) {
+    socket.emit(channel, message);
+  });
+
+  var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
+
+  clicked.bufferWithTimeOrCount(200, 2)
+      .filter(function(x) { return x.length == 2 })
+      .map(toMessage)
+      .map(center_click, node_settings)
+      .onValue(function(message) {
+    socket.emit(channel, { action: "create", args: [message] });
+  });
+
   node_buses.create.onValue(function(message) {
-    createNode(jsPlumb, mainContainer, message, node_settings);
+    createNode(jsPlumb, mainContainer, message, node_settings, update_bus);
   });
   node_buses.find.onValue(function(message) {
-    readNodes(jsPlumb, mainContainer, message, node_settings);
+    readNodes(jsPlumb, mainContainer, message, node_settings, update_bus);
   });
   node_buses.update.onValue(function(message) {
     updateNodes(jsPlumb, mainContainer, message, node_settings);
