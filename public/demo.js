@@ -1,7 +1,17 @@
+function curry(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+
+  return function() {
+    return fn.apply(this, args.concat(
+          Array.prototype.slice.call(arguments, 0)));
+  };
+};
+
+
 function message_handler(message, buses) {
   console.log('received:', message);
   var msg = message.args;
-  buses[message.action].push(msg);
+  buses[message.action](msg);
 }
 
 function make_update_message(id, x, y) {
@@ -48,7 +58,7 @@ function read_nodes(jsPlumb, mainContainer, node_settings, update_bus, node_mess
   }
 }
 
-function update_node(jsPlumb, mainContainer, node_settings, message) {
+function update_node(jsPlumb, mainContainer, node_settings, node_message) {
   var id = node_message.id;
 
   var x = node_message.x;
@@ -163,24 +173,24 @@ jsPlumb.ready(function() {
   });
 
   var node_buses = {
-    create:  new Bacon.Bus(),
-    find:    new Bacon.Bus(),
-    update:  new Bacon.Bus(),
-    destroy: new Bacon.Bus()
+    create:  curry(create_node, jsPlumb, mainContainer, node_settings, update_bus),
+    find:    curry(read_nodes, jsPlumb, mainContainer, node_settings, update_bus),
+    update:  curry(update_nodes, jsPlumb, mainContainer, node_settings),
+    destroy: curry(delete_nodes, jsPlumb, mainContainer, node_settings)
   };
 
-  node_buses.create.onValue(function(message) {
-    create_node(jsPlumb, mainContainer, node_settings, update_bus, message);
-  });
-  node_buses.find.onValue(function(message) {
-    read_nodes(jsPlumb, mainContainer, node_settings, update_bus, message);
-  });
-  node_buses.update.onValue(function(message) {
-    update_nodes(jsPlumb, mainContainer, node_settings, message);
-  });
-  node_buses.destroy.onValue(function(message) {
-    delete_nodes(jsPlumb, mainContainer, node_settings, message);
-  });
+  //node_buses.create.onValue(function(message) {
+    //create_node(jsPlumb, mainContainer, node_settings, update_bus, message);
+  //});
+  //node_buses.find.onValue(function(message) {
+    //read_nodes(jsPlumb, mainContainer, node_settings, update_bus, message);
+  //});
+  //node_buses.update.onValue(function(message) {
+    //update_nodes(jsPlumb, mainContainer, node_settings, message);
+  //});
+  //node_buses.destroy.onValue(function(message) {
+    //delete_nodes(jsPlumb, mainContainer, node_settings, message);
+  //});
 
   socket.on(channel, function(message) {
     message_handler(message, node_buses);
