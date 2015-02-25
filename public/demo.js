@@ -60,7 +60,7 @@ function updateNode(jsPlumb, mainContainer, node_message, node_settings) {
 
 function deleteNode(jsPlumb, mainContainer, node_message, node_settings) {
   var id = node_message.id;
-  console.log(node_message);
+  //console.log(node_message);
 
   var e = $("#" + node_settings.id_prefix + id);
   e.remove();
@@ -89,13 +89,21 @@ function center_click(node_settings, message) {
 
 function toMessage(e) {
   var e = e[0];
-  console.log("message: ", e);
+  //console.log("message: ", e);
   var parentOffset = $("#diagramContainer").offset();
   var relX = e.originalEvent.pageX - (parentOffset.left);
   var relY = e.originalEvent.pageY - Math.floor(parentOffset.top);
   //console.log(relX);
   //console.log(relY);
   return { x: relX, y: relY };
+};
+
+function find_element(position, message) {
+  return $(document.elementFromPoint(position.x, position.y));
+};
+
+function get_id(message) {
+  return message.attr("id").split("-")[1];
 };
 
 jsPlumb.ready(function() {
@@ -140,7 +148,33 @@ jsPlumb.ready(function() {
     socket.emit(channel, message);
   });
 
+  var keydown = new Bacon.Bus();
+  $(document).keydown(function(e) {
+    keydown.push(e);
+  });
+
+  var mouse_position_events = new Bacon.Bus();
+  $(document).mousemove(function(event) {
+    mouse_position_events.push({ x: event.pageX, y: event.pageY });
+  });
+
+  var mouse_position = mouse_position_events.toProperty({ x: 0, y:0 }, function(x) { return x; });
+
+  var d_down = keydown.filter(function(message) {
+    return message.key == "d";
+  });
+
+  mouse_position.sampledBy(d_down, find_element)
+        .map(get_id)
+        .filter(function(message) { return message != undefined })
+        .onValue(function(id) {
+          socket.emit(channel, {action: 'destroy', args: [{ id: id }]});
+        }
+  );
+
   var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
+
+  //keydown.onValue(function(message) { console.log(message) });
 
   clicked.bufferWithTimeOrCount(200, 2)
       .filter(function(x) { return x.length == 2 })
