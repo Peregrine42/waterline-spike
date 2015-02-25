@@ -7,7 +7,6 @@ function curry(fn) {
   };
 };
 
-
 function message_handler(message, buses) {
   console.log('received:', message);
   var msg = message.args;
@@ -70,7 +69,6 @@ function update_node(jsPlumb, mainContainer, node_settings, node_message) {
 
 function delete_node(jsPlumb, mainContainer, node_settings, node_message) {
   var id = node_message.id;
-  //console.log(node_message);
 
   var e = $("#" + node_settings.id_prefix + id);
   e.remove();
@@ -99,12 +97,9 @@ function center_click(node_settings, message) {
 
 function toMessage(e) {
   var e = e[0];
-  //console.log("message: ", e);
   var parentOffset = $("#diagramContainer").offset();
   var relX = e.originalEvent.pageX - (parentOffset.left);
   var relY = e.originalEvent.pageY - Math.floor(parentOffset.top);
-  //console.log(relX);
-  //console.log(relY);
   return { x: relX, y: relY };
 };
 
@@ -162,8 +157,6 @@ jsPlumb.ready(function() {
 
   var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
 
-  //keydown.onValue(function(message) { console.log(message) });
-
   clicked.bufferWithTimeOrCount(200, 2)
       .filter(function(x) { return x.length == 2 })
       .map(toMessage)
@@ -178,19 +171,6 @@ jsPlumb.ready(function() {
     update:  curry(update_nodes, jsPlumb, mainContainer, node_settings),
     destroy: curry(delete_nodes, jsPlumb, mainContainer, node_settings)
   };
-
-  //node_buses.create.onValue(function(message) {
-    //create_node(jsPlumb, mainContainer, node_settings, update_bus, message);
-  //});
-  //node_buses.find.onValue(function(message) {
-    //read_nodes(jsPlumb, mainContainer, node_settings, update_bus, message);
-  //});
-  //node_buses.update.onValue(function(message) {
-    //update_nodes(jsPlumb, mainContainer, node_settings, message);
-  //});
-  //node_buses.destroy.onValue(function(message) {
-    //delete_nodes(jsPlumb, mainContainer, node_settings, message);
-  //});
 
   socket.on(channel, function(message) {
     message_handler(message, node_buses);
