@@ -10,9 +10,9 @@ function make_update_message(id, x, y) {
 
 function create_node(jsPlumb,
                     mainContainer,
-                    node_message,
                     node_settings,
-                    update_bus) {
+                    update_bus,
+                    node_message) {
 
   var id = node_message.id;
   var x = node_message.x;
@@ -39,16 +39,16 @@ function create_node(jsPlumb,
   return e;
 }
 
-function read_nodes(jsPlumb, mainContainer, node_messages, node_settings, update_bus) {
+function read_nodes(jsPlumb, mainContainer, node_settings, update_bus, node_messages) {
   $("." + node_settings.css_class).remove();
 
   for (var i = 0; i < node_messages.length; i++) {
     var message = node_messages[i];
-    create_node(jsPlumb, mainContainer, message, node_settings, update_bus);
+    create_node(jsPlumb, mainContainer, node_settings, update_bus, message);
   }
 }
 
-function update_node(jsPlumb, mainContainer, node_message, node_settings) {
+function update_node(jsPlumb, mainContainer, node_settings, message) {
   var id = node_message.id;
 
   var x = node_message.x;
@@ -58,7 +58,7 @@ function update_node(jsPlumb, mainContainer, node_message, node_settings) {
   e.css({ "top": y, "left": x });
 }
 
-function delete_node(jsPlumb, mainContainer, node_message, node_settings) {
+function delete_node(jsPlumb, mainContainer, node_settings, node_message) {
   var id = node_message.id;
   //console.log(node_message);
 
@@ -66,17 +66,17 @@ function delete_node(jsPlumb, mainContainer, node_message, node_settings) {
   e.remove();
 }
 
-function delete_nodes(jsPlumb, mainContainer, node_messages, node_settings) {
+function delete_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
   for (var i = 0; i < node_messages.length; i++) {
     var message = node_messages[i];
-    delete_node(jsPlumb, mainContainer, message, node_settings);
+    delete_node(jsPlumb, mainContainer, node_settings, message);
   }
 }
 
-function update_nodes(jsPlumb, mainContainer, node_messages, node_settings) {
+function update_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
   for (var i = 0; i < node_messages.length; i++) {
     var message = node_messages[i];
-    update_node(jsPlumb, mainContainer, message, node_settings);
+    update_node(jsPlumb, mainContainer, node_settings, message);
   }
 }
 
@@ -117,21 +117,6 @@ jsPlumb.ready(function() {
   };
 
   jsPlumb.setContainer($(mainContainer));
-
-  //var nodeMessage1 = { "x": 90, "y": 120, "id": 1 }
-  //var nodeMessage2 = { "x": 500, "y": 50, "id": 2 }
-
-  //create_node(jsPlumb, mainContainer, nodeMessage1, node_settings);
-  //create_node(jsPlumb, mainContainer, nodeMessage2, node_settings);
-
-  //var nodeMessage3 = { "x": 90, "y": 120, "id": 1 }
-  //delete_node(jsPlumb, mainContainer, nodeMessage3, node_settings);
-
-  //var nodeMessage4 = { "x": 90, "y": 140, "id": 2 }
-  //update_node(jsPlumb, mainContainer, nodeMessage4, node_settings);
-
-  //var messages = [ nodeMessage1, nodeMessage2 ];
-  //read_nodes(jsPlumb, mainContainer, messages, node_settings);
 
   var socket = io();
   var channel = 'message';
@@ -176,6 +161,7 @@ jsPlumb.ready(function() {
       .onValue(function(message) {
     socket.emit(channel, { action: "create", args: [message] });
   });
+
   var node_buses = {
     create:  new Bacon.Bus(),
     find:    new Bacon.Bus(),
@@ -183,18 +169,17 @@ jsPlumb.ready(function() {
     destroy: new Bacon.Bus()
   };
 
-
   node_buses.create.onValue(function(message) {
-    create_node(jsPlumb, mainContainer, message, node_settings, update_bus);
+    create_node(jsPlumb, mainContainer, node_settings, update_bus, message);
   });
   node_buses.find.onValue(function(message) {
-    read_nodes(jsPlumb, mainContainer, message, node_settings, update_bus);
+    read_nodes(jsPlumb, mainContainer, node_settings, update_bus, message);
   });
   node_buses.update.onValue(function(message) {
-    update_nodes(jsPlumb, mainContainer, message, node_settings);
+    update_nodes(jsPlumb, mainContainer, node_settings, message);
   });
   node_buses.destroy.onValue(function(message) {
-    delete_nodes(jsPlumb, mainContainer, message, node_settings);
+    delete_nodes(jsPlumb, mainContainer, node_settings, message);
   });
 
   socket.on(channel, function(message) {
