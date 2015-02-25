@@ -136,13 +136,6 @@ jsPlumb.ready(function() {
   var socket = io();
   var channel = 'message';
 
-  var node_buses = {
-    create:  new Bacon.Bus(),
-    find:    new Bacon.Bus(),
-    update:  new Bacon.Bus(),
-    destroy: new Bacon.Bus()
-  };
-
   var update_bus = new Bacon.Bus();
   update_bus.onValue(function(message) {
     socket.emit(channel, message);
@@ -183,6 +176,13 @@ jsPlumb.ready(function() {
       .onValue(function(message) {
     socket.emit(channel, { action: "create", args: [message] });
   });
+  var node_buses = {
+    create:  new Bacon.Bus(),
+    find:    new Bacon.Bus(),
+    update:  new Bacon.Bus(),
+    destroy: new Bacon.Bus()
+  };
+
 
   node_buses.create.onValue(function(message) {
     createNode(jsPlumb, mainContainer, message, node_settings, update_bus);
