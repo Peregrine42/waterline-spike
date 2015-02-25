@@ -1,14 +1,6 @@
 {
   "data": {
-    "message": [
-      {
-        "x": 379,
-        "y": 85,
-        "createdAt": "2015-02-25T19:28:49.724Z",
-        "updatedAt": "2015-02-25T19:28:52.985Z",
-        "id": 212
-      }
-    ]
+    "message": []
   },
   "schema": {
     "message": {
