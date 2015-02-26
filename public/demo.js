@@ -17,11 +17,11 @@ function make_update_message(id, x, y) {
   return { action: "update", args: [{ id: id }, { x: x, y: y }] }
 }
 
-function create_node(jsPlumb,
-                    mainContainer,
-                    node_settings,
-                    update_bus,
-                    node_message) {
+function actually_create_node(jsPlumb,
+                              mainContainer,
+                              node_settings,
+                              update_bus,
+                              node_message) {
 
   var id = node_message.id;
   var x = node_message.x;
@@ -39,10 +39,10 @@ function create_node(jsPlumb,
   });
 
   jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
-      var new_x = e.pos[0];
-      var new_y = e.pos[1];
-      update_bus.push(make_update_message(id, new_x, new_y));
-    }
+    var new_x = e.pos[0];
+    var new_y = e.pos[1];
+    update_bus.push(make_update_message(id, new_x, new_y));
+  }
   });
 
   var endpointOptions = {
@@ -53,12 +53,28 @@ function create_node(jsPlumb,
     maxConnections: -1,
     beforeDrop: function(e) { update_bus.push({
       action: "create",
-      args:   [ { type: "edge", source_id: e.sourceId, target_id: e.targetId } ]
+    args:   [ { type: "edge", source_id: e.sourceId, target_id: e.targetId } ]
     }); }
   };
   var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
-
   return e;
+}
+
+function create_node(jsPlumb,
+                    mainContainer,
+                    node_settings,
+                    update_bus,
+                    node_message) {
+
+  if (node_message.type == "node") {
+    var e = actually_create_node(jsPlumb,
+                         mainContainer,
+                         node_settings,
+                         update_bus,
+                         node_message);
+    return e;
+  };
+
 }
 
 function read_nodes(jsPlumb, mainContainer, node_settings, update_bus, node_messages) {
