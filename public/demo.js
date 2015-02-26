@@ -53,7 +53,7 @@ function create_node(jsPlumb,
     maxConnections: -1,
     beforeDrop: function(e) { update_bus.push({
       action: "create",
-      args:   [ { type: "edge", source_id: e.sourceId, target_id: targetId } ]
+      args:   [ { type: "edge", source_id: e.sourceId, target_id: e.targetId } ]
     }); }
   };
   var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);

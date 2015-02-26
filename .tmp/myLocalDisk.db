@@ -1,6 +1,31 @@
 {
   "data": {
-    "message": []
+    "message": [
+      {
+        "x": 477.5,
+        "y": 50.5,
+        "type": "node",
+        "createdAt": "2015-02-26T00:04:24.211Z",
+        "updatedAt": "2015-02-26T00:04:24.211Z",
+        "id": 230
+      },
+      {
+        "x": 261.5,
+        "y": 86.5,
+        "type": "node",
+        "createdAt": "2015-02-26T00:04:24.956Z",
+        "updatedAt": "2015-02-26T00:04:24.956Z",
+        "id": 231
+      },
+      {
+        "type": "edge",
+        "source_id": "node-231",
+        "target_id": "node-230",
+        "createdAt": "2015-02-26T00:04:44.105Z",
+        "updatedAt": "2015-02-26T00:04:44.105Z",
+        "id": 232
+      }
+    ]
   },
   "schema": {
     "message": {
@@ -20,7 +45,7 @@
   },
   "counters": {
     "message": {
-      "id": 229
+      "id": 232
     }
   }
 }
