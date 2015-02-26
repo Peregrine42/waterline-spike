@@ -17,6 +17,17 @@ function make_update_message(id, x, y) {
   return { action: "update", args: [{ id: id }, { x: x, y: y }] }
 }
 
+function create_connection(jsPlumb,
+                           settings,
+                           message) {
+  jsPlumb.connect({ source: message.source_id,
+                    target: message.target_id,
+                    anchors: ["Center", "Center"],
+                    maxConnections: 1000
+                  });
+}
+
+
 function actually_create_node(jsPlumb,
                               mainContainer,
                               node_settings,
@@ -50,13 +61,16 @@ function actually_create_node(jsPlumb,
     isSource:true,
     connectorStyle : { strokeStyle:"#666", lineWidth: 5 },
     isTarget:true,
-    maxConnections: -1,
-    beforeDrop: function(e) { update_bus.push({
-      action: "create",
-    args:   [ { type: "edge", source_id: e.sourceId, target_id: e.targetId } ]
-    }); }
+    maxConnections: 500,
+    uniqueEndpoint: true,
+    //beforeDrop: function(e) { update_bus.push({
+      //action: "create",
+    //args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
+    //});
+    //}
   };
   var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
+  //jsPlumb.makeSource(e, {anchor: "Center"}, endpointOptions);
   return e;
 }
 
@@ -67,13 +81,17 @@ function create_node(jsPlumb,
                     node_message) {
 
   if (node_message.type == "node") {
-    var e = actually_create_node(jsPlumb,
+    var n = actually_create_node(jsPlumb,
                          mainContainer,
                          node_settings,
                          update_bus,
                          node_message);
-    return e;
-  };
+    return n;
+  } else if (node_message.type == "connection") {
+    var e = create_connection(jsPlumb,
+                              node_settings,
+                              node_message);
+  }
 
 }
 
