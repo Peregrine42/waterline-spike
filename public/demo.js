@@ -1,3 +1,7 @@
+var mainContainer = "diagramContainer";
+
+jsPlumb.setContainer($("#" + mainContainer));
+
 function curry(fn) {
   var args = Array.prototype.slice.call(arguments, 1);
 
@@ -22,8 +26,6 @@ function create_connection(jsPlumb,
                            message) {
   jsPlumb.connect({ source: message.source_id,
                     target: message.target_id,
-                    anchors: ["Center", "Center"],
-                    maxConnections: 1000
                   });
 }
 
@@ -49,12 +51,12 @@ function actually_create_node(jsPlumb,
     "height": node_settings.height
   });
 
-  jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
-    var new_x = e.pos[0];
-    var new_y = e.pos[1];
-    update_bus.push(make_update_message(id, new_x, new_y));
-  }
-  });
+  //jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
+      //var new_x = e.pos[0];
+      //var new_y = e.pos[1];
+      //update_bus.push(make_update_message(id, new_x, new_y));
+    //}
+  //});
 
   var endpointOptions = {
     paintStyle:{ width:25, height:25, fillStyle:'#666' },
@@ -62,15 +64,18 @@ function actually_create_node(jsPlumb,
     connectorStyle : { strokeStyle:"#666", lineWidth: 5 },
     isTarget:true,
     maxConnections: 500,
-    uniqueEndpoint: true,
-    //beforeDrop: function(e) { update_bus.push({
-      //action: "create",
-    //args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
-    //});
-    //}
+    anchor: "Center",
+    //uniqueEndpoint: true,
+    beforeDrop: function(e) { update_bus.push({
+                                action: "create",
+                                args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
+                              });
+                              return false;
+    }
   };
-  var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
-  //jsPlumb.makeSource(e, {anchor: "Center"}, endpointOptions);
+  //var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
+  jsPlumb.makeSource(e, endpointOptions);
+  jsPlumb.makeTarget(e, endpointOptions);
   return e;
 }
 
@@ -164,8 +169,6 @@ function get_id(message) {
 };
 
 jsPlumb.ready(function() {
-  var mainContainer = "diagramContainer";
-
   var node_settings = {
     "id_prefix": "node-",
     "css_class": "node",
@@ -173,7 +176,6 @@ jsPlumb.ready(function() {
     "height"   : 75
   };
 
-  jsPlumb.setContainer($(mainContainer));
 
   var socket = io();
   var channel = 'message';
