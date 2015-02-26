@@ -24,9 +24,9 @@ function make_update_message(id, x, y) {
 function create_connection(jsPlumb,
                            settings,
                            message) {
-  jsPlumb.connect({ source: message.source_id,
-                    target: message.target_id,
-                  });
+  var e = jsPlumb.connect({ source: message.source_id,
+                            target: message.target_id,
+                          });
 }
 
 
@@ -51,31 +51,52 @@ function actually_create_node(jsPlumb,
     "height": node_settings.height
   });
 
-  //jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
-      //var new_x = e.pos[0];
-      //var new_y = e.pos[1];
-      //update_bus.push(make_update_message(id, new_x, new_y));
-    //}
-  //});
+  var target = $('<div></div>');
+  $("#" + node_settings.id_prefix + id).append(target);
+  target.attr("id", node_settings.id_prefix + id + "_1");
+  target.addClass(node_settings.css_class);
+  target.css({
+    "top": (node_settings.width/2) - 20,
+    "left": (node_settings.width/2) - 20,
+    "width": 40,
+    "height": 40
+  });
+
+  jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
+      var new_x = e.pos[0];
+      var new_y = e.pos[1];
+      update_bus.push(make_update_message(id, new_x, new_y));
+    }
+  });
 
   var endpointOptions = {
-    paintStyle:{ width:25, height:25, fillStyle:'#666' },
+    paintStyle:{ width: 10, height: 10, fillStyle:'#666' },
     isSource:true,
     connectorStyle : { strokeStyle:"#666", lineWidth: 5 },
     isTarget:true,
     maxConnections: 500,
     anchor: "Center",
     //uniqueEndpoint: true,
-    beforeDrop: function(e) { update_bus.push({
-                                action: "create",
-                                args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
-                              });
-                              return false;
+    beforeDrop: function(e) {
+      var connections = jsPlumb.getConnections();
+      previous_connection = _.findWhere(connections, {sourceId: e.sourceId, targetId: e.targetId});
+      if (previous_connection) {
+        update_bus.push({
+                          action: "destroy",
+                          args:   [ { source_id: e.sourceId, target_id: e.targetId } ]
+                        });
+      } else {
+        update_bus.push({
+                          action: "create",
+                          args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
+                        });
+      };
+      return false;
     }
   };
   //var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
-  jsPlumb.makeSource(e, endpointOptions);
-  jsPlumb.makeTarget(e, endpointOptions);
+  jsPlumb.makeSource(target, endpointOptions);
+  jsPlumb.makeTarget(target, endpointOptions);
   return e;
 }
 
@@ -120,10 +141,18 @@ function update_node(jsPlumb, mainContainer, node_settings, node_message) {
 }
 
 function delete_node(jsPlumb, mainContainer, node_settings, node_message) {
-  var id = node_message.id;
+  if (node_message.type == "node") {
+    var id = node_message.id;
 
-  var e = $("#" + node_settings.id_prefix + id);
-  e.remove();
+    var e = $("#" + node_settings.id_prefix + id);
+    e.remove();
+  } else {
+    var source = node_message.source_id;
+    var target = node_message.target_id;
+    var connections = jsPlumb.getConnections();
+    var conn = _.findWhere(connections, {sourceId: source, targetId: target});
+    if (conn) { jsPlumb.detach(conn); };
+  }
 }
 
 function delete_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
@@ -182,6 +211,7 @@ jsPlumb.ready(function() {
 
   var update_bus = new Bacon.Bus();
   update_bus.onValue(function(message) {
+    console.log('sending:', message);
     socket.emit(channel, message);
   });
 

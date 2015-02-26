@@ -2,116 +2,44 @@
   "data": {
     "message": [
       {
-        "x": 470.5,
-        "y": 66.5,
+        "x": 513,
+        "y": 58,
         "type": "node",
-        "createdAt": "2015-02-26T01:19:35.864Z",
-        "updatedAt": "2015-02-26T01:19:35.864Z",
-        "id": 305
+        "createdAt": "2015-02-26T03:09:59.710Z",
+        "updatedAt": "2015-02-26T03:10:30.563Z",
+        "id": 508
       },
       {
-        "x": 128.5,
-        "y": 79.5,
+        "x": 189.5,
+        "y": 133.5,
         "type": "node",
-        "createdAt": "2015-02-26T01:19:36.585Z",
-        "updatedAt": "2015-02-26T01:19:36.585Z",
-        "id": 306
-      },
-      {
-        "x": 270.5,
-        "y": 92.5,
-        "type": "node",
-        "createdAt": "2015-02-26T01:19:37.313Z",
-        "updatedAt": "2015-02-26T01:19:37.313Z",
-        "id": 307
-      },
-      {
-        "x": 378.5,
-        "y": 143.5,
-        "type": "node",
-        "createdAt": "2015-02-26T01:19:38.116Z",
-        "updatedAt": "2015-02-26T01:19:38.116Z",
-        "id": 308
+        "createdAt": "2015-02-26T03:10:00.392Z",
+        "updatedAt": "2015-02-26T03:10:00.392Z",
+        "id": 509
       },
       {
         "type": "connection",
-        "source_id": "node-305",
-        "target_id": "node-307",
-        "createdAt": "2015-02-26T01:19:40.417Z",
-        "updatedAt": "2015-02-26T01:19:40.417Z",
-        "id": 309
+        "source_id": "node-508_1",
+        "target_id": "node-509_1",
+        "createdAt": "2015-02-26T03:10:20.691Z",
+        "updatedAt": "2015-02-26T03:10:20.691Z",
+        "id": 511
       },
       {
         "type": "connection",
-        "source_id": "node-308",
-        "target_id": "node-305",
-        "createdAt": "2015-02-26T01:19:44.272Z",
-        "updatedAt": "2015-02-26T01:19:44.272Z",
-        "id": 310
+        "source_id": "node-508_1",
+        "target_id": "node-509_1",
+        "createdAt": "2015-02-26T03:10:20.703Z",
+        "updatedAt": "2015-02-26T03:10:20.703Z",
+        "id": 512
       },
       {
         "type": "connection",
-        "source_id": "node-307",
-        "target_id": "node-308",
-        "createdAt": "2015-02-26T01:19:46.718Z",
-        "updatedAt": "2015-02-26T01:19:46.718Z",
-        "id": 311
-      },
-      {
-        "type": "connection",
-        "source_id": "node-307",
-        "target_id": "node-308",
-        "createdAt": "2015-02-26T01:19:46.724Z",
-        "updatedAt": "2015-02-26T01:19:46.724Z",
-        "id": 312
-      },
-      {
-        "type": "connection",
-        "source_id": "node-306",
-        "target_id": "node-307",
-        "createdAt": "2015-02-26T01:19:49.451Z",
-        "updatedAt": "2015-02-26T01:19:49.451Z",
-        "id": 313
-      },
-      {
-        "type": "connection",
-        "source_id": "node-308",
-        "target_id": "node-308",
-        "createdAt": "2015-02-26T01:19:55.683Z",
-        "updatedAt": "2015-02-26T01:19:55.683Z",
-        "id": 314
-      },
-      {
-        "type": "connection",
-        "source_id": "node-308",
-        "target_id": "node-307",
-        "createdAt": "2015-02-26T01:20:04.421Z",
-        "updatedAt": "2015-02-26T01:20:04.421Z",
-        "id": 315
-      },
-      {
-        "type": "connection",
-        "source_id": "node-308",
-        "target_id": "node-306",
-        "createdAt": "2015-02-26T01:21:01.690Z",
-        "updatedAt": "2015-02-26T01:21:01.690Z",
-        "id": 316
-      },
-      {
-        "type": "connection",
-        "source_id": "node-308",
-        "target_id": "node-306",
-        "createdAt": "2015-02-26T01:21:01.705Z",
-        "updatedAt": "2015-02-26T01:21:01.705Z",
-        "id": 317
-      },
-      {
-        "type": "connection",
-        "source_id": "node-308",
-        "target_id": "node-308",
-        "createdAt": "2015-02-26T01:21:17.017Z",
-        "updatedAt": "2015-02-26T01:21:17.017Z",
-        "id": 318
+        "source_id": "node-508_1",
+        "target_id": "node-509_1",
+        "createdAt": "2015-02-26T03:10:20.705Z",
+        "updatedAt": "2015-02-26T03:10:20.705Z",
+        "id": 513
       }
     ]
   },
@@ -133,7 +61,7 @@
   },
   "counters": {
     "message": {
-      "id": 318
+      "id": 513
     }
   }
 }
