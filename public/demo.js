@@ -45,6 +45,19 @@ function create_node(jsPlumb,
     }
   });
 
+  var endpointOptions = {
+    paintStyle:{ width:25, height:25, fillStyle:'#666' },
+    isSource:true,
+    connectorStyle : { strokeStyle:"#666", lineWidth: 5 },
+    isTarget:true,
+    maxConnections: -1,
+    beforeDrop: function(e) { update_bus.push({
+      action: "create",
+      args:   [ { type: "edge", source_id: e.sourceId, target_id: targetId } ]
+    }); }
+  };
+  var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
+
   return e;
 }
 
@@ -93,6 +106,11 @@ function center_click(node_settings, message) {
     x: message.x - (node_settings.width/2),
     y: message.y - (node_settings.height/2)
   }
+}
+
+function set_type_to_node(message) {
+  message.type = "node";
+  return message;
 }
 
 function toMessage(e) {
@@ -161,6 +179,7 @@ jsPlumb.ready(function() {
       .filter(function(x) { return x.length == 2 })
       .map(toMessage)
       .map(center_click, node_settings)
+      .map(set_type_to_node)
       .onValue(function(message) {
     socket.emit(channel, { action: "create", args: [message] });
   });
