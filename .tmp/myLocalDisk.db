@@ -2,44 +2,28 @@
   "data": {
     "message": [
       {
-        "x": 513,
-        "y": 58,
+        "x": 200.5,
+        "y": 144.5,
         "type": "node",
-        "createdAt": "2015-02-26T03:09:59.710Z",
-        "updatedAt": "2015-02-26T03:10:30.563Z",
-        "id": 508
+        "createdAt": "2015-02-27T18:04:23.817Z",
+        "updatedAt": "2015-02-27T18:04:23.817Z",
+        "id": 524
       },
       {
-        "x": 189.5,
-        "y": 133.5,
+        "x": 431.5,
+        "y": 143.5,
         "type": "node",
-        "createdAt": "2015-02-26T03:10:00.392Z",
-        "updatedAt": "2015-02-26T03:10:00.392Z",
-        "id": 509
+        "createdAt": "2015-02-27T18:04:25.077Z",
+        "updatedAt": "2015-02-27T18:04:25.077Z",
+        "id": 525
       },
       {
-        "type": "connection",
-        "source_id": "node-508_1",
-        "target_id": "node-509_1",
-        "createdAt": "2015-02-26T03:10:20.691Z",
-        "updatedAt": "2015-02-26T03:10:20.691Z",
-        "id": 511
-      },
-      {
-        "type": "connection",
-        "source_id": "node-508_1",
-        "target_id": "node-509_1",
-        "createdAt": "2015-02-26T03:10:20.703Z",
-        "updatedAt": "2015-02-26T03:10:20.703Z",
-        "id": 512
-      },
-      {
-        "type": "connection",
-        "source_id": "node-508_1",
-        "target_id": "node-509_1",
-        "createdAt": "2015-02-26T03:10:20.705Z",
-        "updatedAt": "2015-02-26T03:10:20.705Z",
-        "id": 513
+        "x": 318.5,
+        "y": 47.5,
+        "type": "node",
+        "createdAt": "2015-02-27T18:14:32.899Z",
+        "updatedAt": "2015-02-27T18:14:32.899Z",
+        "id": 542
       }
     ]
   },
@@ -61,7 +45,7 @@
   },
   "counters": {
     "message": {
-      "id": 513
+      "id": 542
     }
   }
 }

@@ -257,9 +257,19 @@ jsPlumb.ready(function() {
     destroy: curry(delete_nodes, jsPlumb, mainContainer, node_settings)
   };
 
+  function action_filter(action, message)
+  {
+    return message.action == action;
+  }
+
+  db_events = new Bacon.Bus();
   socket.on(channel, function(message) {
     message_handler(message, node_buses);
+    db_events.push(message);
   });
+
+  var create_events = db_events.filter(action_filter, "create")
+    .onValue(function(message) { console.log(message) });
 
   var initial_request = {
     action: 'find',
