@@ -160,7 +160,7 @@ function delete_node(jsPlumb, mainContainer, node_settings, node_message) {
   }
 }
 
-function delete_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
+function destroy_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
   for (var i = 0; i < node_messages.length; i++) {
     var message = node_messages[i];
     delete_node(jsPlumb, mainContainer, node_settings, message);
@@ -255,21 +255,9 @@ jsPlumb.ready(function() {
     socket.emit(channel, { action: "create", args: [message] });
   });
 
-  var node_buses = {
-    create:  curry(create_node, jsPlumb, mainContainer, node_settings, update_bus),
-    find:    curry(read_nodes, jsPlumb, mainContainer, node_settings, update_bus),
-    update:  curry(update_nodes, jsPlumb, mainContainer, node_settings),
-    destroy: curry(delete_nodes, jsPlumb, mainContainer, node_settings)
-  };
-
   function type_filter(type, message)
   {
     return message.args.type == type;
-  }
-
-  function action_filter(action, message)
-  {
-    return message.action == action;
   }
 
   function add_context(message)
@@ -280,9 +268,9 @@ jsPlumb.ready(function() {
     }
   }
 
-  function message_with(object, message)
+  function message_with(object, name, message)
   {
-    message[object.toString()] = object
+    message[name] = object
     return message
   }
 
@@ -294,7 +282,6 @@ jsPlumb.ready(function() {
 
   db_events = new Bacon.Bus();
   socket.on(channel, function(message) {
-    message_handler(message, node_buses);
     db_events.push(message);
   });
 
@@ -321,7 +308,7 @@ jsPlumb.ready(function() {
   var node_actions =
   {
     create:  create_node,
-    find:    find_nodes,
+    find:    read_nodes,
     update:  update_nodes,
     destroy: destroy_nodes
   }
@@ -333,17 +320,16 @@ jsPlumb.ready(function() {
   var outgoing_bus = new Bacon.Bus();
 
   var events = db_events
-    .map(add_context)
     .map(functionalize_action, node_actions)
 
   var node_events = events
     .filter(type_filter, "node")
-    .map(message_with, node_settings)
+    .map(message_with, node_settings, "context")
     .onValue(function(message) { console.log(message) });
 
   var connection_events = events
     .filter(type_filter, "connection")
-    .map(message_with, connection_settings)
+    .map(message_with, connection_settings, "context")
     .onValue(function(message) { console.log(message) });
 
   var initial_request = {
