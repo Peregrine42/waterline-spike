@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <script type="text/javascript" src="js-graph-it.js"></script>
+    <link rel="stylesheet" type="text/css" href="js-graph-it.css">
+    <style>
+      .block { position: absolute; }
+      #mainCanvas {
+        width: 350px;
+        height: 250px;
+        border: 1px solid black;
+      };
+    </style>
+  </head>
+  <body onload="initPageObjects();">
+    <div class="canvas" id="mainCanvas">
+      <h1 class="block draggable" id="h1_block"
+        style="left: 10px; top:10px;">
+        h1 block
+      </h1>
+      <h2 class="block draggable" id="h2_block"
+        style="left: 200px; top: 100px;">
+        h2 block
+      </h2>
+      <h2 class="block draggable" id="new_h2_block"
+        style="left: 250; top: 150;">
+        h2 block
+      </h2>
+      <div class="connector h1_block h2_block"></div>
+    </div>
+  <script>
+    function do_the_thing(el) {
+      var e = document.getElementById("mainCanvas");
+      var element = document.createElement("div");
+      element.className = "connector h1_block new_h2_block"
+      e.appendChild(element);
+      initPageObjects();
+    }
+    var el = document.getElementById("new_h2_block");
+    el.addEventListener("click", do_the_thing);
+  </script>
+  </body>
+</html>

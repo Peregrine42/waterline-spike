@@ -11,6 +11,11 @@ function curry(fn) {
   };
 };
 
+function dup(obj)
+{
+  return JSON.parse(JSON.stringify(obj));
+}
+
 function message_handler(message, buses) {
   console.log('received:', message);
   var msg = message.args;
@@ -30,11 +35,10 @@ function create_connection(jsPlumb,
 }
 
 
-function actually_create_node(jsPlumb,
-                              mainContainer,
-                              node_settings,
-                              update_bus,
-                              node_message) {
+function create_node(env, node_message) {
+  var jsPlumb       = env.jsPlumb;
+  var node_settings = env.dom;
+  var outgoing_bus  = env.outgoing_bus;
 
   var id = node_message.id;
   var x = node_message.x;
@@ -100,33 +104,7 @@ function actually_create_node(jsPlumb,
   return e;
 }
 
-function create_node(jsPlumb,
-                    mainContainer,
-                    node_settings,
-                    update_bus,
-                    node_message) {
-
-  if (node_message.type == "node") {
-    var n = actually_create_node(jsPlumb,
-                         mainContainer,
-                         node_settings,
-                         update_bus,
-                         node_message);
-    return n;
-  } else if (node_message.type == "connection") {
-    var e = create_connection(jsPlumb,
-                              node_settings,
-                              node_message);
-  }
-
-}
-
-function read_nodes(
-    jsPlumb,
-    mainContainer,
-    node_settings,
-    update_bus,
-    node_messages) {
+function read_nodes(node_messages, env) {
   $("." + node_settings.css_class).remove();
 
   for (var i = 0; i < node_messages.length; i++) {
@@ -260,24 +238,18 @@ jsPlumb.ready(function() {
     return message.args.type == type;
   }
 
-  function add_context(message)
-  {
-    return {
-      context: {},
-      message: message
-    }
-  }
-
   function message_with(object, name, message)
   {
-    message[name] = object
-    return message
+    var new_message = dup(message);
+    new_message[name] = object
+    return new_message
   }
 
   function functionalize_action(actions, message)
   {
-    message.action = actions[message.action];
-    return message;
+    var new_message = dup(message);
+    new_message.action = actions[message.action];
+    return new_message;
   }
 
   db_events = new Bacon.Bus();
@@ -313,24 +285,45 @@ jsPlumb.ready(function() {
     destroy: destroy_nodes
   }
 
+  //var connection_actions =
+  //{
+    //create:  create_connection,
+    //find:    read_connections,
+    //destroy: destroy_connections
+  //}
+
+  function call_function(message)
+  {
+    var action  = message.action;
+    var args    = message.args;
+    return action(args);
+  }
+
+  function add_env(env, message)
+  {
+    console.log(env);
+    var new_message = dup(message);
+    new_message.action = curry(message.action, env);
+    return new_message;
+  }
+
+  var outgoing_bus = new Bacon.Bus();
   var general_settings = make_general_settings(jsPlumb, outgoing_bus)
   var node_settings = make_node_settings(general_settings);
   var connection_settings = general_settings;
 
-  var outgoing_bus = new Bacon.Bus();
-
-  var events = db_events
-    .map(functionalize_action, node_actions)
-
-  var node_events = events
+  var node_events = db_events
     .filter(type_filter, "node")
-    .map(message_with, node_settings, "context")
-    .onValue(function(message) { console.log(message) });
+    .map(functionalize_action, node_actions)
+    .map(add_env, node_settings)
+    .onValue(call_function);
 
-  var connection_events = events
-    .filter(type_filter, "connection")
-    .map(message_with, connection_settings, "context")
-    .onValue(function(message) { console.log(message) });
+  //var connection_events = events
+    //.filter(type_filter, "connection")
+    //.map(functionalize_action, connection_actions)
+    //.map(function(message) {console.log(message); return message })
+    //.map(message_with, connection_settings, "context")
+    //.onValue(function(message) { console.log(message) });
 
   var initial_request = {
     action: 'find',
