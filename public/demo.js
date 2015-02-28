@@ -121,7 +121,12 @@ function create_node(jsPlumb,
 
 }
 
-function read_nodes(jsPlumb, mainContainer, node_settings, update_bus, node_messages) {
+function read_nodes(
+    jsPlumb,
+    mainContainer,
+    node_settings,
+    update_bus,
+    node_messages) {
   $("." + node_settings.css_class).remove();
 
   for (var i = 0; i < node_messages.length; i++) {
@@ -257,9 +262,34 @@ jsPlumb.ready(function() {
     destroy: curry(delete_nodes, jsPlumb, mainContainer, node_settings)
   };
 
+  function type_filter(type, message)
+  {
+    return message.args.type == type;
+  }
+
   function action_filter(action, message)
   {
     return message.action == action;
+  }
+
+  function add_context(message)
+  {
+    return {
+      context: {},
+      message: message
+    }
+  }
+
+  function message_with(object, message)
+  {
+    message[object.toString()] = object
+    return message
+  }
+
+  function functionalize_action(actions, message)
+  {
+    message.action = actions[message.action];
+    return message;
   }
 
   db_events = new Bacon.Bus();
@@ -268,7 +298,52 @@ jsPlumb.ready(function() {
     db_events.push(message);
   });
 
-  var create_events = db_events.filter(action_filter, "create")
+  function make_general_settings(jsPlumb, outgoing_bus)
+  {
+    return {
+      jsPlumb: jsPlumb,
+      outgoing_bus: outgoing_bus
+    };
+  }
+
+  function make_node_settings(settings)
+  {
+    settings.dom =
+    {
+      "id_prefix": "node-",
+      "css_class": "node",
+      "width"    : 75,
+      "height"   : 75
+    }
+    return settings;
+  }
+
+  var node_actions =
+  {
+    create:  create_node,
+    find:    find_nodes,
+    update:  update_nodes,
+    destroy: destroy_nodes
+  }
+
+  var general_settings = make_general_settings(jsPlumb, outgoing_bus)
+  var node_settings = make_node_settings(general_settings);
+  var connection_settings = general_settings;
+
+  var outgoing_bus = new Bacon.Bus();
+
+  var events = db_events
+    .map(add_context)
+    .map(functionalize_action, node_actions)
+
+  var node_events = events
+    .filter(type_filter, "node")
+    .map(message_with, node_settings)
+    .onValue(function(message) { console.log(message) });
+
+  var connection_events = events
+    .filter(type_filter, "connection")
+    .map(message_with, connection_settings)
     .onValue(function(message) { console.log(message) });
 
   var initial_request = {
