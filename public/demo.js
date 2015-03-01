@@ -16,10 +16,13 @@ function dup(obj)
   return JSON.parse(JSON.stringify(obj));
 }
 
-function message_handler(message, buses) {
-  console.log('received:', message);
-  var msg = message.args;
-  buses[message.action](msg);
+function extract_multiple(message) {
+  return Bacon.fromArray(message.args);
+}
+
+function clear_dom(origin_div, message) {
+  $("." + message.type).remove();
+  return message;
 }
 
 function make_update_message(id, x, y) {
@@ -34,34 +37,6 @@ function create_connection(jsPlumb,
                           });
 }
 
-
-function create_node(env, message) {
-  console.log(env);
-  console.log(message);
-  var flowchart_library = env.flowchart_library;
-  var settings = env.dom_settings;
-  var outgoing_bus = env.outgoing_bus;
-  var the_document = env.the_document;
-  var canvas_div = env.canvas_div;
-  var update_bus = env.outgoing_bus;
-
-  var id = settings.id_prefix + message.id;
-  var x = message.x;
-  var y = message.y;
-
-  var width = settings.width;
-  var height = settings.height;
-  var outer_element = make_node_element(
-      the_document, settings, id, x, y, width, height);
-  canvas_div.appendChild(outer_element);
-
-  var connection_element = make_connection_element(
-      the_document, settings, id, width, height);
-  outer_element.appendChild(connection_element);
-
-  make_endpoint(connection_element, flowchart_library, update_bus);
-  return outer_element;
-}
 
 function make_element(e, css_class, id, x, y, width, height)
 {
@@ -297,6 +272,11 @@ jsPlumb.ready(function() {
     return message.args.type == type;
   }
 
+  function internal_type_filter(type, message)
+  {
+    return message.type == type;
+  }
+
   function message_with(object, name, message)
   {
     var new_message = dup(message);
@@ -315,22 +295,6 @@ jsPlumb.ready(function() {
   socket.on(channel, function(message) {
     db_events.push(message);
   });
-
-  var create_node_jsPlumb = curry(create_node, env);
-
-  var node_actions = {
-    create: create_node_jsPlumb,
-    //find: read_nodes_jsPlumb,
-    //update: update_nodes_jsPlumb,
-    //destroy: destroy_nodes_jsPlumb
-  }
-
-  //var connection_actions =
-  //{
-    //create:  create_connection,
-    //find:    read_connections,
-    //destroy: destroy_connections
-  //}
 
   function call_function(message)
   {
@@ -357,9 +321,9 @@ function make_node_element(the_document, dom_settings, id, x, y)
 
   function make_parent(the_document, dom_settings, message)
   {
-    var id = message.args.id;
-    var x = message.args.x;
-    var y = message.args.y;
+    var id = message.id;
+    var x = message.x;
+    var y = message.y;
 
     var css_class = dom_settings.css_class;
     var dom_id = dom_settings.id_prefix + id;
@@ -405,25 +369,32 @@ function make_node_element(the_document, dom_settings, id, x, y)
     return the_parent;
   }
 
-  var new_nodes = db_events
-    .filter(type_filter, "node")
+  function just_args(message) {
+    return message.args;
+  }
+
+  var new_nodes_from_db = db_events
     .filter(action_filter, "create")
+    .map(just_args)
+    .filter(internal_type_filter, "node")
+
+  var read_results = db_events
+    .filter(action_filter, "find")
+    .map(clear_dom, origin_div)
+    .flatMap(extract_multiple)
+
+  var new_nodes = new_nodes_from_db.merge(read_results)
     .map(make_parent, document, node_settings)
     .map(append_to, origin_div)
     .map(make_target, document)
     .map(make_draggable, jsPlumb, outgoing_bus)
     .onValue(function(target) { console.log(target); return target; } )
-  //var connection_events = events
-    //.filter(type_filter, "connection")
-    //.map(functionalize_action, connection_actions)
-    //.map(function(message) {console.log(message); return message })
-    //.map(message_with, connection_settings, "context")
-    //.onValue(function(message) { console.log(message) });
 
   var initial_request = {
     action: 'find',
     args: {}
   }
+
   socket.emit(channel, initial_request);
 
 });
