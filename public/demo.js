@@ -35,35 +35,53 @@ function create_connection(jsPlumb,
 }
 
 
-function create_node(factory, message) {
+function create_node(env, message) {
   console.log(env);
   console.log(message);
-  var jsPlumb       = env.jsPlumb;
-  var node_settings = env.dom;
-  var outgoing_bus  = env.outgoing_bus;
+  var flowchart_library = env.flowchart_library;
+  var settings = env.dom_settings;
+  var outgoing_bus = env.outgoing_bus;
+  var the_document = env.the_document;
+  var canvas_div = env.canvas_div;
+  var update_bus = env.outgoing_bus;
 
-  var id = node_message.id;
-  var x = node_message.x;
-  var y = node_message.y;
+  var id = settings.id_prefix + message.id;
+  var x = message.x;
+  var y = message.y;
 
-  return e;
+  var width = settings.width;
+  var height = settings.height;
+  var outer_element = make_node_element(
+      the_document, settings, id, x, y, width, height);
+  canvas_div.appendChild(outer_element);
+
+  var connection_element = make_connection_element(
+      the_document, settings, id, width, height);
+  outer_element.appendChild(connection_element);
+
+  make_draggable(outer_element, flowchart_library, update_bus);
+  make_endpoint(connection_element, flowchart_library, update_bus);
+  return outer_element;
 }
 
 function make_element(e, css_class, id, x, y, width, height)
 {
   e.id = id;
   e.className = css_class;
-  e.style.left   = x;
-  e.style.top    = y;
-  e.style.width  = width;
-  e.style.height = height;
+  var jq = $(e);
+  jq.css({
+      top: y,
+      left: x,
+      width: width,
+      height: height
+  })
   return e;
 }
 
 function make_draggable(element, flowchart_library, update_bus)
 {
   flowchart_library.draggable(
-      outer_element,
+      element,
       { containment: "parent",
         stop: function(e) {
                 var new_x = e.pos[0];
@@ -73,15 +91,20 @@ function make_draggable(element, flowchart_library, update_bus)
       });
 }
 
-function make_connection_element(the_document, dom_settings)
+function make_connection_element(
+    the_document,
+    dom_settings,
+    parent_id,
+    parent_width,
+    parent_height)
 {
   var connection_dom_element = the_document.createElement("div");
   var connection_css_class = dom_settings.css_class;
-  var connection_dom_id = outer_dom_id + "_1";
-  var connection_width = outer_width - 20;
-  var connection_height = outer_height - 20;
-  var connection_x = (outer_width/2) - (connection_width/2);
-  var connection_y = (outer_height/2) - (connection_height/2);
+  var connection_dom_id = parent_id + "_1";
+  var connection_width = parent_width - 40;
+  var connection_height = parent_height - 40;
+  var connection_x = (parent_width/2) - (connection_width/2);
+  var connection_y = (parent_height/2) - (connection_height/2);
 
   var connection_element = make_element(
       connection_dom_element,
@@ -92,32 +115,21 @@ function make_connection_element(the_document, dom_settings)
   return connection_element;
 }
 
-function make_node_element(the_document, dom_settings)
+function make_node_element(the_document, dom_settings, id, x, y)
 {
   var element = document.createElement("div");
   var css_class = dom_settings.css_class;
-  var outer_dom_id = dom_settings.id_prefix + id;
+  var outer_dom_id = id;
   var outer_width = dom_settings.width;
   var outer_height = dom_settings.height;
 
   var outer_element = make_element(
       element,
       css_class,
-      dom_id,
+      outer_dom_id,
       x, y,
       outer_width, outer_height);
-}
-
-function node_factory(flowchart_library, the_document, dom_settings, update_bus)
-{
-  var outer_element = make_node_element(the_document, dom_settings);
-  document.appendChild(outer_element);
-
-  var connection_element = make_connection_element(the_document, dom_settings);
-  outer_element.appendChild(connection_element);
-
-  make_draggable(outer_element, flowchart_library, update_bus);
-  make_endpoint(connection_element, update_bus);
+  return outer_element;
 }
 
 function send_drop_to_db() {
@@ -137,7 +149,7 @@ function send_drop_to_db() {
   return false;
 }
 
-function make_endpoint(target, bus_to_db)
+function make_endpoint(target, flowchart_library, bus_to_db)
 {
   var endpointOptions = {
     paintStyle:{ width: 10, height: 10, fillStyle:'#666' },
@@ -238,16 +250,21 @@ jsPlumb.ready(function() {
 
   var outgoing_bus = new Bacon.Bus();
 
-  var env = {
-    jsPlumb: jsPlumb,
-    outgoing_bus: outgoing_bus
-  };
+  var canvas_div = document.getElementById("diagramContainer");
 
   var node_settings = {
-    "id_prefix": "node-",
-    "css_class": "node",
-    "width"    : 75,
-    "height"   : 75
+    id_prefix : "node-",
+    css_class : "node",
+    width     : 75,
+    height    : 75
+  };
+
+  var env = {
+    flowchart_library: jsPlumb,
+    outgoing_bus: outgoing_bus,
+    dom_settings: node_settings,
+    the_document: document,
+    canvas_div: canvas_div
   };
 
   outgoing_bus.onValue(function(message) {
@@ -314,14 +331,12 @@ jsPlumb.ready(function() {
     db_events.push(message);
   });
 
+  var create_node_jsPlumb = curry(create_node, env);
 
-  var create_node_jsPlumb = curry(create_node, node_settings);
-
-  var node_actions =
-  {
-    create:  create_node_jsPlumb,
-    //find:    read_nodes_jsPlumb,
-    //update:  update_nodes_jsPlumb,
+  var node_actions = {
+    create: create_node_jsPlumb,
+    //find: read_nodes_jsPlumb,
+    //update: update_nodes_jsPlumb,
     //destroy: destroy_nodes_jsPlumb
   }
 
@@ -337,14 +352,6 @@ jsPlumb.ready(function() {
     var action  = message.action;
     var args    = message.args;
     return action(args);
-  }
-
-  function add_env(env, message)
-  {
-    console.log(env);
-    var new_message = dup(message);
-    new_message.action = curry(message.action, env);
-    return new_message;
   }
 
   var node_events = db_events
