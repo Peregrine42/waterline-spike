@@ -60,22 +60,21 @@ function make_element(e, css_class, id, x, y, width, height)
   return e;
 }
 
-function node_factory(flowchart_library, the_document, dom_settings)
+function make_draggable(element, flowchart_library, update_bus)
 {
-  var element = document.createElement("div");
-  var css_class = dom_settings.css_class;
-  var outer_dom_id = dom_settings.id_prefix + id;
-  var outer_width = dom_settings.width;
-  var outer_height = dom_settings.height;
+  flowchart_library.draggable(
+      outer_element,
+      { containment: "parent",
+        stop: function(e) {
+                var new_x = e.pos[0];
+                var new_y = e.pos[1];
+                update_bus.push(make_update_message(id, new_x, new_y));
+              }
+      });
+}
 
-  var outer_element = make_element(
-      element,
-      css_class,
-      dom_id,
-      x, y,
-      outer_width, outer_height);
-  document.appendChild(outer_element);
-
+function make_connection_element(the_document, dom_settings)
+{
   var connection_dom_element = the_document.createElement("div");
   var connection_css_class = dom_settings.css_class;
   var connection_dom_id = outer_dom_id + "_1";
@@ -90,19 +89,35 @@ function node_factory(flowchart_library, the_document, dom_settings)
       connection_dom_id,
       connection_x, connection_y,
       connection_width, connection_height);
+  return connection_element;
+}
+
+function make_node_element(the_document, dom_settings)
+{
+  var element = document.createElement("div");
+  var css_class = dom_settings.css_class;
+  var outer_dom_id = dom_settings.id_prefix + id;
+  var outer_width = dom_settings.width;
+  var outer_height = dom_settings.height;
+
+  var outer_element = make_element(
+      element,
+      css_class,
+      dom_id,
+      x, y,
+      outer_width, outer_height);
+}
+
+function node_factory(flowchart_library, the_document, dom_settings, update_bus)
+{
+  var outer_element = make_node_element(the_document, dom_settings);
+  document.appendChild(outer_element);
+
+  var connection_element = make_connection_element(the_document, dom_settings);
   outer_element.appendChild(connection_element);
 
-  flowchart_library.draggable(
-      outer_element,
-      { containment: "parent",
-        stop: function(e) {
-                var new_x = e.pos[0];
-                var new_y = e.pos[1];
-                update_bus.push(make_update_message(id, new_x, new_y));
-              }
-      });
-
-  sort_out_connections();
+  make_draggable(outer_element, flowchart_library, update_bus);
+  make_endpoint(connection_element, update_bus);
 }
 
 function send_drop_to_db() {
@@ -122,7 +137,7 @@ function send_drop_to_db() {
   return false;
 }
 
-function make_endpoint(bus_to_db)
+function make_endpoint(target, bus_to_db)
 {
   var endpointOptions = {
     paintStyle:{ width: 10, height: 10, fillStyle:'#666' },
