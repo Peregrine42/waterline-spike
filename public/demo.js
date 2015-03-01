@@ -59,7 +59,6 @@ function create_node(env, message) {
       the_document, settings, id, width, height);
   outer_element.appendChild(connection_element);
 
-  make_draggable(outer_element, flowchart_library, update_bus);
   make_endpoint(connection_element, flowchart_library, update_bus);
   return outer_element;
 }
@@ -78,17 +77,21 @@ function make_element(e, css_class, id, x, y, width, height)
   return e;
 }
 
-function make_draggable(element, flowchart_library, update_bus)
+function make_draggable(flowchart_library, update_bus, element)
 {
   flowchart_library.draggable(
       element,
       { containment: "parent",
         stop: function(e) {
+                console.log(e);
                 var new_x = e.pos[0];
                 var new_y = e.pos[1];
+                var id = e.el.id.split("-")[1];
                 update_bus.push(make_update_message(id, new_x, new_y));
               }
       });
+
+  return element;
 }
 
 function make_connection_element(
@@ -113,23 +116,6 @@ function make_connection_element(
       connection_x, connection_y,
       connection_width, connection_height);
   return connection_element;
-}
-
-function make_node_element(the_document, dom_settings, id, x, y)
-{
-  var element = document.createElement("div");
-  var css_class = dom_settings.css_class;
-  var outer_dom_id = id;
-  var outer_width = dom_settings.width;
-  var outer_height = dom_settings.height;
-
-  var outer_element = make_element(
-      element,
-      css_class,
-      outer_dom_id,
-      x, y,
-      outer_width, outer_height);
-  return outer_element;
 }
 
 function send_drop_to_db() {
@@ -250,7 +236,7 @@ jsPlumb.ready(function() {
 
   var outgoing_bus = new Bacon.Bus();
 
-  var canvas_div = document.getElementById("diagramContainer");
+  var origin_div = document.getElementById("diagramContainer");
 
   var node_settings = {
     id_prefix : "node-",
@@ -264,7 +250,6 @@ jsPlumb.ready(function() {
     outgoing_bus: outgoing_bus,
     dom_settings: node_settings,
     the_document: document,
-    canvas_div: canvas_div
   };
 
   outgoing_bus.onValue(function(message) {
@@ -354,11 +339,80 @@ jsPlumb.ready(function() {
     return action(args);
   }
 
-  var node_events = db_events
-    .filter(type_filter, "node")
-    .map(functionalize_action, node_actions)
-    .onValue(call_function);
+  //var node_events = db_events
+    //.filter(type_filter, "node")
+    //.map(functionalize_action, node_actions)
+    //.onValue(call_function);
 
+  function action_filter(action, message)
+  {
+    return (message.action == action);
+  }
+
+function make_node_element(the_document, dom_settings, id, x, y)
+{
+
+  return outer_element;
+}
+
+  function make_parent(the_document, dom_settings, message)
+  {
+    var id = message.args.id;
+    var x = message.args.x;
+    var y = message.args.y;
+
+    var css_class = dom_settings.css_class;
+    var dom_id = dom_settings.id_prefix + id;
+    var width = dom_settings.width;
+    var height = dom_settings.height;
+    var element = the_document.createElement("div");
+    var modified_element = make_element(
+        element,
+        css_class,
+        dom_id,
+        x, y,
+        width, height);
+    return modified_element;
+  }
+
+  function append_to(the_parent, target) {
+    the_parent.appendChild(target);
+    return target;
+  }
+
+  function get_dimension(target, label) {
+    return (parseInt(target.style[label].slice(0, -2)))
+  }
+
+  function make_target(the_document, the_parent) {
+    var parent_width = get_dimension(the_parent, "width");
+    var parent_height = get_dimension(the_parent, "height");
+
+    var width = parent_width*0.6;
+    var height = parent_height*0.6;
+    var x = (parent_width - width)/2;
+    var y = (parent_height - height)/2;
+    var dom_id = the_parent.id + "_target"
+    var css_class = the_parent.className;
+    var element = the_document.createElement("div");
+    var modified_element = make_element(
+        element,
+        css_class,
+        dom_id,
+        x, y,
+        width, height);
+    append_to(the_parent, modified_element);
+    return the_parent;
+  }
+
+  var new_nodes = db_events
+    .filter(type_filter, "node")
+    .filter(action_filter, "create")
+    .map(make_parent, document, node_settings)
+    .map(append_to, origin_div)
+    .map(make_target, document)
+    .map(make_draggable, jsPlumb, outgoing_bus)
+    .onValue(function(target) { console.log(target); return target; } )
   //var connection_events = events
     //.filter(type_filter, "connection")
     //.map(functionalize_action, connection_actions)
