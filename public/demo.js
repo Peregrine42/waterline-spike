@@ -2,9 +2,36 @@ var mainContainer = "diagramContainer";
 
 jsPlumb.setContainer($("#" + mainContainer));
 
+// utility functions
+function curry(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+
+  return function() {
+    return fn.apply(this, args.concat(
+          Array.prototype.slice.call(arguments, 0)));
+  };
+};
+
+function dup(obj)
+{
+  return JSON.parse(JSON.stringify(obj));
+}
+
+// message filters
 function action_filter(action, message)
 {
   return (message.action == action);
+}
+
+function type_filter(type, message)
+{
+  return message.type == type;
+}
+
+// dom manipulation
+function clear_dom(origin_div, message) {
+  $("." + message.type).remove();
+  return message;
 }
 
 function make_parent(the_document, dom_settings, message)
@@ -25,15 +52,6 @@ function make_parent(the_document, dom_settings, message)
       x, y,
       width, height);
   return modified_element;
-}
-
-function append_to(the_parent, target) {
-  the_parent.appendChild(target);
-  return target;
-}
-
-function get_dimension(target, label) {
-  return (parseInt(target.style[label].slice(0, -2)))
 }
 
 function make_target(the_document, the_parent) {
@@ -57,55 +75,21 @@ function make_target(the_document, the_parent) {
   return the_parent;
 }
 
+function append_to(the_parent, target) {
+  the_parent.appendChild(target);
+  return target;
+}
+
+function get_dimension(target, label) {
+  return (parseInt(target.style[label].slice(0, -2)))
+}
+
 function just_args(message) {
   return message.args;
 }
 
-function type_filter(type, message)
-{
-  return message.args.type == type;
-}
-
-function internal_type_filter(type, message)
-{
-  return message.type == type;
-}
-
-function message_with(object, name, message)
-{
-  var new_message = dup(message);
-  new_message[name] = object
-    return new_message
-}
-
-function functionalize_action(actions, message)
-{
-  var new_message = dup(message);
-  new_message.action = actions[message.action];
-  return new_message;
-}
-
-function curry(fn) {
-  var args = Array.prototype.slice.call(arguments, 1);
-
-  return function() {
-    return fn.apply(this, args.concat(
-          Array.prototype.slice.call(arguments, 0)));
-  };
-};
-
-function dup(obj)
-{
-  return JSON.parse(JSON.stringify(obj));
-}
-
 function extract_multiple(message) {
   return Bacon.fromArray(message.args);
-}
-
-function clear_dom(origin_div, message) {
-  $("." + message.type).remove();
-  return message;
 }
 
 function make_update_message(id, x, y) {
@@ -127,7 +111,6 @@ function create_connection(jsPlumb,
   });
 }
 
-
 function make_element(e, css_class, id, x, y, width, height)
 {
   e.id = id;
@@ -148,7 +131,6 @@ function make_draggable(flowchart_library, update_bus, element)
       element,
       { containment: "parent",
         stop: function(e) {
-                console.log(e);
                 var new_x = e.pos[0];
                 var new_y = e.pos[1];
                 var id = e.el.id.split("-")[1];
@@ -248,7 +230,7 @@ function set_type_to_node(message) {
 
 function toMessage(e) {
   var e = e[0];
-  var parentOffset = $("#diagramContainer").offset();
+  var parentOffset = $(mainContainer).offset();
   var relX = e.originalEvent.pageX - (parentOffset.left);
   var relY = e.originalEvent.pageY - Math.floor(parentOffset.top);
   return { x: relX, y: relY };
@@ -332,7 +314,7 @@ jsPlumb.ready(function() {
   var new_nodes_from_db = db_events
     .filter(action_filter, "create")
     .map(just_args)
-    .filter(internal_type_filter, "node")
+    .filter(type_filter, "node")
 
   var read_results = db_events
     .filter(action_filter, "find")
