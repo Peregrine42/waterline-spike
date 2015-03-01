@@ -2,6 +2,89 @@ var mainContainer = "diagramContainer";
 
 jsPlumb.setContainer($("#" + mainContainer));
 
+function action_filter(action, message)
+{
+  return (message.action == action);
+}
+
+function make_parent(the_document, dom_settings, message)
+{
+  var id = message.id;
+  var x = message.x;
+  var y = message.y;
+
+  var css_class = dom_settings.css_class;
+  var dom_id = dom_settings.id_prefix + id;
+  var width = dom_settings.width;
+  var height = dom_settings.height;
+  var element = the_document.createElement("div");
+  var modified_element = make_element(
+      element,
+      css_class,
+      dom_id,
+      x, y,
+      width, height);
+  return modified_element;
+}
+
+function append_to(the_parent, target) {
+  the_parent.appendChild(target);
+  return target;
+}
+
+function get_dimension(target, label) {
+  return (parseInt(target.style[label].slice(0, -2)))
+}
+
+function make_target(the_document, the_parent) {
+  var parent_width = get_dimension(the_parent, "width");
+  var parent_height = get_dimension(the_parent, "height");
+
+  var width = parent_width*0.6;
+  var height = parent_height*0.6;
+  var x = (parent_width - width)/2;
+  var y = (parent_height - height)/2;
+  var dom_id = the_parent.id + "_target"
+    var css_class = the_parent.className;
+  var element = the_document.createElement("div");
+  var modified_element = make_element(
+      element,
+      css_class,
+      dom_id,
+      x, y,
+      width, height);
+  append_to(the_parent, modified_element);
+  return the_parent;
+}
+
+function just_args(message) {
+  return message.args;
+}
+
+function type_filter(type, message)
+{
+  return message.args.type == type;
+}
+
+function internal_type_filter(type, message)
+{
+  return message.type == type;
+}
+
+function message_with(object, name, message)
+{
+  var new_message = dup(message);
+  new_message[name] = object
+    return new_message
+}
+
+function functionalize_action(actions, message)
+{
+  var new_message = dup(message);
+  new_message.action = actions[message.action];
+  return new_message;
+}
+
 function curry(fn) {
   var args = Array.prototype.slice.call(arguments, 1);
 
@@ -29,12 +112,19 @@ function make_update_message(id, x, y) {
   return { action: "update", args: [{ id: id }, { x: x, y: y }] }
 }
 
+function make_find_message() {
+  return {
+    action: 'find',
+    args: {}
+  }
+}
+
 function create_connection(jsPlumb,
-                           settings,
-                           message) {
+    settings,
+    message) {
   var e = jsPlumb.connect({ source: message.source_id,
-                            target: message.target_id,
-                          });
+    target: message.target_id,
+  });
 }
 
 
@@ -42,12 +132,12 @@ function make_element(e, css_class, id, x, y, width, height)
 {
   e.id = id;
   e.className = css_class;
-  var jq = $(e);
-  jq.css({
-      top: y,
-      left: x,
-      width: width,
-      height: height
+  var element = $(e);
+  element.css({
+    top: y,
+    left: x,
+    width: width,
+    height: height
   })
   return e;
 }
@@ -67,30 +157,6 @@ function make_draggable(flowchart_library, update_bus, element)
       });
 
   return element;
-}
-
-function make_connection_element(
-    the_document,
-    dom_settings,
-    parent_id,
-    parent_width,
-    parent_height)
-{
-  var connection_dom_element = the_document.createElement("div");
-  var connection_css_class = dom_settings.css_class;
-  var connection_dom_id = parent_id + "_1";
-  var connection_width = parent_width - 40;
-  var connection_height = parent_height - 40;
-  var connection_x = (parent_width/2) - (connection_width/2);
-  var connection_y = (parent_height/2) - (connection_height/2);
-
-  var connection_element = make_element(
-      connection_dom_element,
-      connection_css_class,
-      connection_dom_id,
-      connection_x, connection_y,
-      connection_width, connection_height);
-  return connection_element;
 }
 
 function send_drop_to_db() {
@@ -127,15 +193,6 @@ function make_endpoint(target, flowchart_library, bus_to_db)
   //var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
   flowchart_library.makeSource(target, endpointOptions);
   flowchart_library.makeTarget(target, endpointOptions);
-}
-
-function read_nodes(node_messages, env) {
-  $("." + node_settings.css_class).remove();
-
-  for (var i = 0; i < node_messages.length; i++) {
-    var message = node_messages[i];
-    create_node(jsPlumb, mainContainer, node_settings, update_bus, message);
-  }
 }
 
 function update_node(jsPlumb, mainContainer, node_settings, node_message) {
@@ -215,16 +272,16 @@ jsPlumb.ready(function() {
 
   var node_settings = {
     id_prefix : "node-",
-    css_class : "node",
-    width     : 75,
-    height    : 75
+  css_class : "node",
+  width     : 75,
+  height    : 75
   };
 
   var env = {
     flowchart_library: jsPlumb,
-    outgoing_bus: outgoing_bus,
-    dom_settings: node_settings,
-    the_document: document,
+  outgoing_bus: outgoing_bus,
+  dom_settings: node_settings,
+  the_document: document,
   };
 
   outgoing_bus.onValue(function(message) {
@@ -249,129 +306,28 @@ jsPlumb.ready(function() {
   });
 
   mouse_position.sampledBy(d_down, find_element)
-        .map(get_id)
-        .filter(function(message) { return message != undefined })
-        .onValue(function(id) {
-          socket.emit(channel, {action: 'destroy', args: [{ id: id }]});
-        }
-  );
+    .map(get_id)
+    .filter(function(message) { return message != undefined })
+    .onValue(function(id) {
+      socket.emit(channel, {action: 'destroy', args: [{ id: id }]});
+    }
+    );
 
   var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
 
   clicked.bufferWithTimeOrCount(200, 2)
-      .filter(function(x) { return x.length == 2 })
-      .map(toMessage)
-      .map(center_click, node_settings)
-      .map(set_type_to_node)
-      .onValue(function(message) {
-    socket.emit(channel, { action: "create", args: [message] });
-  });
-
-  function type_filter(type, message)
-  {
-    return message.args.type == type;
-  }
-
-  function internal_type_filter(type, message)
-  {
-    return message.type == type;
-  }
-
-  function message_with(object, name, message)
-  {
-    var new_message = dup(message);
-    new_message[name] = object
-    return new_message
-  }
-
-  function functionalize_action(actions, message)
-  {
-    var new_message = dup(message);
-    new_message.action = actions[message.action];
-    return new_message;
-  }
+    .filter(function(x) { return x.length == 2 })
+    .map(toMessage)
+    .map(center_click, node_settings)
+    .map(set_type_to_node)
+    .onValue(function(message) {
+      socket.emit(channel, { action: "create", args: [message] });
+    });
 
   db_events = new Bacon.Bus();
   socket.on(channel, function(message) {
     db_events.push(message);
   });
-
-  function call_function(message)
-  {
-    var action  = message.action;
-    var args    = message.args;
-    return action(args);
-  }
-
-  //var node_events = db_events
-    //.filter(type_filter, "node")
-    //.map(functionalize_action, node_actions)
-    //.onValue(call_function);
-
-  function action_filter(action, message)
-  {
-    return (message.action == action);
-  }
-
-function make_node_element(the_document, dom_settings, id, x, y)
-{
-
-  return outer_element;
-}
-
-  function make_parent(the_document, dom_settings, message)
-  {
-    var id = message.id;
-    var x = message.x;
-    var y = message.y;
-
-    var css_class = dom_settings.css_class;
-    var dom_id = dom_settings.id_prefix + id;
-    var width = dom_settings.width;
-    var height = dom_settings.height;
-    var element = the_document.createElement("div");
-    var modified_element = make_element(
-        element,
-        css_class,
-        dom_id,
-        x, y,
-        width, height);
-    return modified_element;
-  }
-
-  function append_to(the_parent, target) {
-    the_parent.appendChild(target);
-    return target;
-  }
-
-  function get_dimension(target, label) {
-    return (parseInt(target.style[label].slice(0, -2)))
-  }
-
-  function make_target(the_document, the_parent) {
-    var parent_width = get_dimension(the_parent, "width");
-    var parent_height = get_dimension(the_parent, "height");
-
-    var width = parent_width*0.6;
-    var height = parent_height*0.6;
-    var x = (parent_width - width)/2;
-    var y = (parent_height - height)/2;
-    var dom_id = the_parent.id + "_target"
-    var css_class = the_parent.className;
-    var element = the_document.createElement("div");
-    var modified_element = make_element(
-        element,
-        css_class,
-        dom_id,
-        x, y,
-        width, height);
-    append_to(the_parent, modified_element);
-    return the_parent;
-  }
-
-  function just_args(message) {
-    return message.args;
-  }
 
   var new_nodes_from_db = db_events
     .filter(action_filter, "create")
@@ -390,11 +346,6 @@ function make_node_element(the_document, dom_settings, id, x, y)
     .map(make_draggable, jsPlumb, outgoing_bus)
     .onValue(function(target) { console.log(target); return target; } )
 
-  var initial_request = {
-    action: 'find',
-    args: {}
-  }
-
-  socket.emit(channel, initial_request);
+  socket.emit(channel, make_find_message());
 
 });
