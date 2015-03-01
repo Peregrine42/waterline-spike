@@ -35,7 +35,9 @@ function create_connection(jsPlumb,
 }
 
 
-function create_node(env, node_message) {
+function create_node(factory, message) {
+  console.log(env);
+  console.log(message);
   var jsPlumb       = env.jsPlumb;
   var node_settings = env.dom;
   var outgoing_bus  = env.outgoing_bus;
@@ -44,35 +46,84 @@ function create_node(env, node_message) {
   var x = node_message.x;
   var y = node_message.y;
 
-  var e = $('<div></div>');
-  $("#" + mainContainer).append(e);
-  e.attr("id", node_settings.id_prefix + id);
-  e.addClass(node_settings.css_class);
-  e.css({
-    "top": y,
-    "left": x,
-    "width": node_settings.width,
-    "height": node_settings.height
-  });
+  return e;
+}
 
-  var target = $('<div></div>');
-  $("#" + node_settings.id_prefix + id).append(target);
-  target.attr("id", node_settings.id_prefix + id + "_1");
-  target.addClass(node_settings.css_class);
-  target.css({
-    "top": (node_settings.width/2) - 20,
-    "left": (node_settings.width/2) - 20,
-    "width": 40,
-    "height": 40
-  });
+function make_element(e, css_class, id, x, y, width, height)
+{
+  e.id = id;
+  e.className = css_class;
+  e.style.left   = x;
+  e.style.top    = y;
+  e.style.width  = width;
+  e.style.height = height;
+  return e;
+}
 
-  jsPlumb.draggable(e, { containment: "parent", stop: function(e) {
-      var new_x = e.pos[0];
-      var new_y = e.pos[1];
-      update_bus.push(make_update_message(id, new_x, new_y));
-    }
-  });
+function node_factory(flowchart_library, the_document, dom_settings)
+{
+  var element = document.createElement("div");
+  var css_class = dom_settings.css_class;
+  var outer_dom_id = dom_settings.id_prefix + id;
+  var outer_width = dom_settings.width;
+  var outer_height = dom_settings.height;
 
+  var outer_element = make_element(
+      element,
+      css_class,
+      dom_id,
+      x, y,
+      outer_width, outer_height);
+  document.appendChild(outer_element);
+
+  var connection_dom_element = the_document.createElement("div");
+  var connection_css_class = dom_settings.css_class;
+  var connection_dom_id = outer_dom_id + "_1";
+  var connection_width = outer_width - 20;
+  var connection_height = outer_height - 20;
+  var connection_x = (outer_width/2) - (connection_width/2);
+  var connection_y = (outer_height/2) - (connection_height/2);
+
+  var connection_element = make_element(
+      connection_dom_element,
+      connection_css_class,
+      connection_dom_id,
+      connection_x, connection_y,
+      connection_width, connection_height);
+  outer_element.appendChild(connection_element);
+
+  flowchart_library.draggable(
+      outer_element,
+      { containment: "parent",
+        stop: function(e) {
+                var new_x = e.pos[0];
+                var new_y = e.pos[1];
+                update_bus.push(make_update_message(id, new_x, new_y));
+              }
+      });
+
+  sort_out_connections();
+}
+
+function send_drop_to_db() {
+  var connections = flowchart_library.getConnections();
+  previous_connection = _.findWhere(connections, {sourceId: e.sourceId, targetId: e.targetId});
+  if (previous_connection) {
+    update_bus.push({
+      action: "destroy",
+      args:   [ { source_id: e.sourceId, target_id: e.targetId } ]
+    });
+  } else {
+    update_bus.push({
+      action: "create",
+      args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
+    });
+  };
+  return false;
+}
+
+function make_endpoint(bus_to_db)
+{
   var endpointOptions = {
     paintStyle:{ width: 10, height: 10, fillStyle:'#666' },
     isSource:true,
@@ -82,26 +133,12 @@ function create_node(env, node_message) {
     anchor: "Center",
     //uniqueEndpoint: true,
     beforeDrop: function(e) {
-      var connections = jsPlumb.getConnections();
-      previous_connection = _.findWhere(connections, {sourceId: e.sourceId, targetId: e.targetId});
-      if (previous_connection) {
-        update_bus.push({
-                          action: "destroy",
-                          args:   [ { source_id: e.sourceId, target_id: e.targetId } ]
-                        });
-      } else {
-        update_bus.push({
-                          action: "create",
-                          args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
-                        });
-      };
-      return false;
+      bus_to_db.push(e);
     }
   };
   //var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
-  jsPlumb.makeSource(target, endpointOptions);
-  jsPlumb.makeTarget(target, endpointOptions);
-  return e;
+  flowchart_library.makeSource(target, endpointOptions);
+  flowchart_library.makeTarget(target, endpointOptions);
 }
 
 function read_nodes(node_messages, env) {
@@ -181,6 +218,16 @@ function get_id(message) {
 };
 
 jsPlumb.ready(function() {
+  var channel = 'message';
+  var socket = io();
+
+  var outgoing_bus = new Bacon.Bus();
+
+  var env = {
+    jsPlumb: jsPlumb,
+    outgoing_bus: outgoing_bus
+  };
+
   var node_settings = {
     "id_prefix": "node-",
     "css_class": "node",
@@ -188,12 +235,7 @@ jsPlumb.ready(function() {
     "height"   : 75
   };
 
-
-  var socket = io();
-  var channel = 'message';
-
-  var update_bus = new Bacon.Bus();
-  update_bus.onValue(function(message) {
+  outgoing_bus.onValue(function(message) {
     console.log('sending:', message);
     socket.emit(channel, message);
   });
@@ -257,32 +299,15 @@ jsPlumb.ready(function() {
     db_events.push(message);
   });
 
-  function make_general_settings(jsPlumb, outgoing_bus)
-  {
-    return {
-      jsPlumb: jsPlumb,
-      outgoing_bus: outgoing_bus
-    };
-  }
 
-  function make_node_settings(settings)
-  {
-    settings.dom =
-    {
-      "id_prefix": "node-",
-      "css_class": "node",
-      "width"    : 75,
-      "height"   : 75
-    }
-    return settings;
-  }
+  var create_node_jsPlumb = curry(create_node, node_settings);
 
   var node_actions =
   {
-    create:  create_node,
-    find:    read_nodes,
-    update:  update_nodes,
-    destroy: destroy_nodes
+    create:  create_node_jsPlumb,
+    //find:    read_nodes_jsPlumb,
+    //update:  update_nodes_jsPlumb,
+    //destroy: destroy_nodes_jsPlumb
   }
 
   //var connection_actions =
@@ -307,15 +332,9 @@ jsPlumb.ready(function() {
     return new_message;
   }
 
-  var outgoing_bus = new Bacon.Bus();
-  var general_settings = make_general_settings(jsPlumb, outgoing_bus)
-  var node_settings = make_node_settings(general_settings);
-  var connection_settings = general_settings;
-
   var node_events = db_events
     .filter(type_filter, "node")
     .map(functionalize_action, node_actions)
-    .map(add_env, node_settings)
     .onValue(call_function);
 
   //var connection_events = events
