@@ -62,7 +62,7 @@ function make_target(the_document, the_parent) {
   var height = parent_height*0.6;
   var x = (parent_width - width)/2;
   var y = (parent_height - height)/2;
-  var dom_id = the_parent.id + "_target"
+  var dom_id = the_parent.id + "-target"
     var css_class = the_parent.className;
   var element = the_document.createElement("div");
   var modified_element = make_element(
@@ -84,7 +84,7 @@ function get_dimension(target, label) {
   return (parseInt(target.style[label].slice(0, -2)))
 }
 
-function just_args(message) {
+function extract_single(message) {
   return message.args;
 }
 
@@ -177,29 +177,29 @@ function make_endpoint(target, flowchart_library, bus_to_db)
   flowchart_library.makeTarget(target, endpointOptions);
 }
 
-function update_node(jsPlumb, mainContainer, node_settings, node_message) {
-  var id = node_message.id;
+function update_node($, settings, message) {
+  var id = message.id;
 
-  var x = node_message.x;
-  var y = node_message.y;
+  var x = message.x;
+  var y = message.y;
 
-  var e = $("#" + node_settings.id_prefix + id);
+  var e = $("#" + settings.id_prefix + id);
   e.css({ "top": y, "left": x });
+  return message;
 }
 
-function delete_node(jsPlumb, mainContainer, node_settings, node_message) {
-  if (node_message.type == "node") {
-    var id = node_message.id;
+function destroy_node($, settings, message) {
+  var e = $("#" + settings.id_prefix + message.id);
+  e.remove();
+  return message;
+}
 
-    var e = $("#" + node_settings.id_prefix + id);
-    e.remove();
-  } else {
-    var source = node_message.source_id;
-    var target = node_message.target_id;
-    var connections = jsPlumb.getConnections();
-    var conn = _.findWhere(connections, {sourceId: source, targetId: target});
-    if (conn) { jsPlumb.detach(conn); };
-  }
+function destroy_connection(message) {
+  var source = node_message.source_id;
+  var target = node_message.target_id;
+  var connections = jsPlumb.getConnections();
+  var conn = _.findWhere(connections, {sourceId: source, targetId: target});
+  if (conn) { jsPlumb.detach(conn); };
 }
 
 function destroy_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
@@ -230,7 +230,7 @@ function set_type_to_node(message) {
 
 function toMessage(e) {
   var e = e[0];
-  var parentOffset = $(mainContainer).offset();
+  var parentOffset = $("#" + mainContainer).offset();
   var relX = e.originalEvent.pageX - (parentOffset.left);
   var relY = e.originalEvent.pageY - Math.floor(parentOffset.top);
   return { x: relX, y: relY };
@@ -247,23 +247,16 @@ function get_id(message) {
 jsPlumb.ready(function() {
   var channel = 'message';
   var socket = io();
-
-  var outgoing_bus = new Bacon.Bus();
-
   var origin_div = document.getElementById("diagramContainer");
+
+  // outgoing to server
+  var outgoing_bus = new Bacon.Bus();
 
   var node_settings = {
     id_prefix : "node-",
-  css_class : "node",
-  width     : 75,
-  height    : 75
-  };
-
-  var env = {
-    flowchart_library: jsPlumb,
-  outgoing_bus: outgoing_bus,
-  dom_settings: node_settings,
-  the_document: document,
+    css_class : "node",
+    width     : 75,
+    height    : 75
   };
 
   outgoing_bus.onValue(function(message) {
@@ -281,7 +274,8 @@ jsPlumb.ready(function() {
     mouse_position_events.push({ x: event.pageX, y: event.pageY });
   });
 
-  var mouse_position = mouse_position_events.toProperty({ x: 0, y:0 }, function(x) { return x; });
+  var mouse_position = mouse_position_events
+    .toProperty({ x: 0, y:0 });
 
   var d_down = keydown.filter(function(message) {
     return message.key == "d";
@@ -292,8 +286,7 @@ jsPlumb.ready(function() {
     .filter(function(message) { return message != undefined })
     .onValue(function(id) {
       socket.emit(channel, {action: 'destroy', args: [{ id: id }]});
-    }
-    );
+    });
 
   var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
 
@@ -306,14 +299,12 @@ jsPlumb.ready(function() {
       socket.emit(channel, { action: "create", args: [message] });
     });
 
-  db_events = new Bacon.Bus();
-  socket.on(channel, function(message) {
-    db_events.push(message);
-  });
+  // incoming from db
+  var db_events = Bacon.fromEventTarget(socket, channel);
 
   var new_nodes_from_db = db_events
     .filter(action_filter, "create")
-    .map(just_args)
+    .map(extract_single)
     .filter(type_filter, "node")
 
   var read_results = db_events
@@ -325,8 +316,20 @@ jsPlumb.ready(function() {
     .map(make_parent, document, node_settings)
     .map(append_to, origin_div)
     .map(make_target, document)
-    .map(make_draggable, jsPlumb, outgoing_bus)
-    .onValue(function(target) { console.log(target); return target; } )
+    .onValue(make_draggable, jsPlumb, outgoing_bus)
+
+  var updates_from_db = db_events
+    .filter(action_filter, "update")
+    .flatMap(extract_multiple)
+
+  var updates = updates_from_db
+    .filter(type_filter, "node")
+    .onValue(update_node, $, node_settings)
+
+  var destroyed_nodes = db_events
+    .filter(action_filter, "destroy")
+    .flatMap(extract_multiple)
+    .onValue(destroy_node, $, node_settings)
 
   socket.emit(channel, make_find_message());
 
