@@ -103,12 +103,43 @@ function make_find_message() {
   }
 }
 
-function create_connection(jsPlumb,
-    settings,
-    message) {
-  var e = jsPlumb.connect({ source: message.source_id,
-    target: message.target_id,
+function make_connection_message(source, target) {
+  return {
+    action: "create",
+      args: [{ type: "connection", source: source, target: target }]
+  }
+}
+
+function make_connection(instance, the_document, message) {
+  var source_id = message.source + "-center";
+  var target_id = message.target + "-center";
+
+  instance.connect({
+    uuids: [source_id, target_id],
+    paintStyle:{ strokeStyle:"black", lineWidth:10 },
+    hoverPaintStyle: { strokeStyle: "blue", lineWidth: 12 }
   });
+}
+
+function add_endpoint(instance, update_bus, element) {
+  var endpoint = instance.addEndpoint(element, {
+    uuid: element.getAttribute("id") + "-center",
+    anchor: "Center",
+    maxConnections: -1,
+    isSource: true,
+    isTarget: true,
+    endpoint: "Dot",
+    paintStyle: {
+      fillStyle: "blue",
+      radius: 15
+    },
+    beforeDrop: function(e) {
+      update_bus.push(make_connection_message(e.sourceId, e.targetId));
+      return null;
+    }
+  });
+  // set z index
+  $(endpoint.canvas).css("z-index", 50);
 }
 
 function make_element(e, css_class, id, x, y, width, height)
@@ -141,42 +172,6 @@ function make_draggable(flowchart_library, update_bus, element)
   return element;
 }
 
-function send_drop_to_db() {
-  var connections = flowchart_library.getConnections();
-  previous_connection = _.findWhere(connections, {sourceId: e.sourceId, targetId: e.targetId});
-  if (previous_connection) {
-    update_bus.push({
-      action: "destroy",
-      args:   [ { source_id: e.sourceId, target_id: e.targetId } ]
-    });
-  } else {
-    update_bus.push({
-      action: "create",
-      args:   [ { type: "connection", source_id: e.sourceId, target_id: e.targetId } ]
-    });
-  };
-  return false;
-}
-
-function make_endpoint(target, flowchart_library, bus_to_db)
-{
-  var endpointOptions = {
-    paintStyle:{ width: 10, height: 10, fillStyle:'#666' },
-    isSource:true,
-    connectorStyle : { strokeStyle:"#666", lineWidth: 5 },
-    isTarget:true,
-    maxConnections: 500,
-    anchor: "Center",
-    //uniqueEndpoint: true,
-    beforeDrop: function(e) {
-      bus_to_db.push(e);
-    }
-  };
-  //var endpoint = jsPlumb.addEndpoint(e, {anchor: "Center"}, endpointOptions);
-  flowchart_library.makeSource(target, endpointOptions);
-  flowchart_library.makeTarget(target, endpointOptions);
-}
-
 function update_node($, settings, message) {
   var id = message.id;
 
@@ -194,26 +189,17 @@ function destroy_node($, settings, message) {
   return message;
 }
 
-function destroy_connection(message) {
-  var source = node_message.source_id;
-  var target = node_message.target_id;
-  var connections = jsPlumb.getConnections();
+function destroy_endpoint(instance, node_settings, message) {
+  var target_uuid = "node-" + message.id + "-center";
+  instance.deleteEndpoint(target_uuid);
+}
+
+function destroy_connection(instance, message) {
+  var source = message.source;
+  var target = message.target;
+  var connections = instance.getConnections();
   var conn = _.findWhere(connections, {sourceId: source, targetId: target});
-  if (conn) { jsPlumb.detach(conn); };
-}
-
-function destroy_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
-  for (var i = 0; i < node_messages.length; i++) {
-    var message = node_messages[i];
-    delete_node(jsPlumb, mainContainer, node_settings, message);
-  }
-}
-
-function update_nodes(jsPlumb, mainContainer, node_settings, node_messages) {
-  for (var i = 0; i < node_messages.length; i++) {
-    var message = node_messages[i];
-    update_node(jsPlumb, mainContainer, node_settings, message);
-  }
+  if (conn) { instance.detach(conn); };
 }
 
 function center_click(node_settings, message) {
@@ -278,15 +264,56 @@ jsPlumb.ready(function() {
     .toProperty({ x: 0, y:0 });
 
   var d_down = keydown.filter(function(message) {
+    //var connections = jsPlumb.getConnections();
+    //_.each(connections, console.log);
     return message.key == "d";
   });
 
-  mouse_position.sampledBy(d_down, find_element)
+  var delete_commands = mouse_position.sampledBy(d_down, find_element)
+
+  function has_id($, message) {
+    return message.attr("id") != undefined
+  }
+
+  function no_id($, message) {
+    return !has_id($, message);
+  }
+
+  function find_under_mouse_hover(instance, message) {
+    var result = instance.select().isHover();
+    //console.log(result);
+    return result;
+  }
+
+  function send_destroy_connection_message(outgoing_bus, message) {
+    var source = message[1].sourceId;
+    var target = message[1].targetId;
+
+    outgoing_bus.push({
+      action: "destroy",
+      args: [{
+        type: "connection",
+        source: source,
+        target: target
+      }]
+    });
+  }
+
+  delete_commands
+    .filter(has_id, $)
     .map(get_id)
     .filter(function(message) { return message != undefined })
     .onValue(function(id) {
       socket.emit(channel, {action: 'destroy', args: [{ id: id }]});
     });
+
+  d_down
+    .map(find_under_mouse_hover, jsPlumb)
+    .flatMap(function(message) { return Bacon.fromArray(message) })
+    .map(function(message) { console.log(message); return message; })
+    .filter(function(result) { return result[0]; })
+    .onValue(send_destroy_connection_message, outgoing_bus)
+
 
   var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
 
@@ -302,21 +329,22 @@ jsPlumb.ready(function() {
   // incoming from db
   var db_events = Bacon.fromEventTarget(socket, channel);
 
-  var new_nodes_from_db = db_events
+  var new_from_db = db_events
     .filter(action_filter, "create")
     .map(extract_single)
-    .filter(type_filter, "node")
 
   var read_results = db_events
     .filter(action_filter, "find")
     .map(clear_dom, origin_div)
     .flatMap(extract_multiple)
 
-  var new_nodes = new_nodes_from_db.merge(read_results)
+  var new_nodes = new_from_db.merge(read_results)
+    .filter(type_filter, "node")
     .map(make_parent, document, node_settings)
     .map(append_to, origin_div)
-    .map(make_target, document)
-    .onValue(make_draggable, jsPlumb, outgoing_bus)
+    //.map(make_target, document)
+    .map(make_draggable, jsPlumb, outgoing_bus)
+    .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
   var updates_from_db = db_events
     .filter(action_filter, "update")
@@ -329,8 +357,22 @@ jsPlumb.ready(function() {
   var destroyed_nodes = db_events
     .filter(action_filter, "destroy")
     .flatMap(extract_multiple)
-    .onValue(destroy_node, $, node_settings)
+    .map(destroy_node, $, node_settings)
+    .onValue(destroy_endpoint, jsPlumb, node_settings)
 
+  var new_connections = new_from_db.merge(read_results)
+    .filter(type_filter, "connection")
+    .onValue(make_connection, jsPlumb, document)
+
+  //function destroy_connection(jsPlumb, message) {
+    //var source = message.source;
+    //var target = message.source;
+  //}
+
+  var destroyed_connections = db_events
+    .filter(action_filter, "destroy")
+    .flatMap(extract_multiple)
+    .onValue(destroy_connection, jsPlumb)
   socket.emit(channel, make_find_message());
 
 });
