@@ -51,6 +51,16 @@ function make_parent(the_document, dom_settings, message)
       dom_id,
       x, y,
       width, height);
+  var label_dom_element = the_document.createElement("div");
+  var label_element = make_element(
+      label_dom_element,
+      "label",
+      dom_id + "-label",
+      (width/2), (0-height/6),
+      width, (height/3));
+  if ($(".label").hasClass("hidden")) { $(label_element).addClass("hidden"); };
+  $(label_element).append("<span>" + dom_id + "</span>");
+  modified_element.appendChild(label_element);
   return modified_element;
 }
 
@@ -295,6 +305,18 @@ jsPlumb.ready(function() {
 
   var d_down = keydown.filter(function(message) {
     return message.key == "d";
+  });
+
+  var l_down = keydown.filter(function(message) {
+    return message.key == "l";
+  });
+
+  var label_toggles = l_down.onValue(function(message) {
+    if ($(".label").hasClass("hidden")) {
+      $(".label").removeClass("hidden");
+    } else {
+      $(".label").addClass("hidden");
+    }
   });
 
   var delete_commands = mouse_position.sampledBy(d_down, find_element)
