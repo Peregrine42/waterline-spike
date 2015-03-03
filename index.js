@@ -20,7 +20,7 @@ var config = {
     },
   },
   defaults: {
-    migrate: 'drop'
+    migrate: 'safe'
   }
 };
 

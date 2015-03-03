@@ -54,26 +54,26 @@ function make_parent(the_document, dom_settings, message)
   return modified_element;
 }
 
-function make_target(the_document, the_parent) {
-  var parent_width = get_dimension(the_parent, "width");
-  var parent_height = get_dimension(the_parent, "height");
+//function make_target(the_document, the_parent) {
+  //var parent_width = get_dimension(the_parent, "width");
+  //var parent_height = get_dimension(the_parent, "height");
 
-  var width = parent_width*0.6;
-  var height = parent_height*0.6;
-  var x = (parent_width - width)/2;
-  var y = (parent_height - height)/2;
-  var dom_id = the_parent.id + "-target"
-    var css_class = the_parent.className;
-  var element = the_document.createElement("div");
-  var modified_element = make_element(
-      element,
-      css_class,
-      dom_id,
-      x, y,
-      width, height);
-  append_to(the_parent, modified_element);
-  return the_parent;
-}
+  //var width = parent_width*0.6;
+  //var height = parent_height*0.6;
+  //var x = (parent_width - width)/2;
+  //var y = (parent_height - height)/2;
+  //var dom_id = the_parent.id + "-target"
+    //var css_class = the_parent.className;
+  //var element = the_document.createElement("div");
+  //var modified_element = make_element(
+      //element,
+      //css_class,
+      //dom_id,
+      //x, y,
+      //width, height);
+  //append_to(the_parent, modified_element);
+  //return the_parent;
+//}
 
 function append_to(the_parent, target) {
   the_parent.appendChild(target);
@@ -117,7 +117,8 @@ function make_connection(instance, the_document, message) {
   instance.connect({
     uuids: [source_id, target_id],
     paintStyle:{ strokeStyle:"black", lineWidth:10 },
-    hoverPaintStyle: { strokeStyle: "blue", lineWidth: 12 }
+    hoverPaintStyle: { strokeStyle: "blue", lineWidth: 12 },
+    connector: "Straight"
   });
 }
 
@@ -131,15 +132,13 @@ function add_endpoint(instance, update_bus, element) {
     endpoint: "Dot",
     paintStyle: {
       fillStyle: "blue",
-      radius: 15
+      radius: 10
     },
     beforeDrop: function(e) {
       update_bus.push(make_connection_message(e.sourceId, e.targetId));
       return null;
     }
   });
-  // set z index
-  $(endpoint.canvas).css("z-index", 50);
 }
 
 function make_element(e, css_class, id, x, y, width, height)
@@ -172,6 +171,25 @@ function make_draggable(flowchart_library, update_bus, element)
   return element;
 }
 
+function destroy_node($, settings, message) {
+  var e = $("#" + settings.id_prefix + message.id);
+  e.remove();
+  return message;
+}
+
+function is_node($, message) {
+  return message.attr("id") != undefined
+}
+
+function not_node($, message) {
+  return !is_node($, message);
+}
+
+function find_under_mouse_hover(instance, message) {
+  var result = instance.select().isHover();
+  return result;
+}
+
 function update_node($, settings, message) {
   var id = message.id;
 
@@ -180,13 +198,24 @@ function update_node($, settings, message) {
 
   var e = $("#" + settings.id_prefix + id);
   e.css({ "top": y, "left": x });
+
+  jsPlumb.repaintEverything();
   return message;
 }
 
-function destroy_node($, settings, message) {
-  var e = $("#" + settings.id_prefix + message.id);
-  e.remove();
-  return message;
+// outbound to database
+function send_destroy_connection_message(outgoing_bus, message) {
+  var source = message[1].sourceId;
+  var target = message[1].targetId;
+
+  outgoing_bus.push({
+    action: "destroy",
+    args: [{
+      type: "connection",
+    source: source,
+    target: target
+    }]
+  });
 }
 
 function destroy_endpoint(instance, node_settings, message) {
@@ -230,6 +259,7 @@ function get_id(message) {
   return message.attr("id").split("-")[1];
 };
 
+// top-level composition
 jsPlumb.ready(function() {
   var channel = 'message';
   var socket = io();
@@ -264,39 +294,10 @@ jsPlumb.ready(function() {
     .toProperty({ x: 0, y:0 });
 
   var d_down = keydown.filter(function(message) {
-    //var connections = jsPlumb.getConnections();
-    //_.each(connections, console.log);
     return message.key == "d";
   });
 
   var delete_commands = mouse_position.sampledBy(d_down, find_element)
-
-  function is_node($, message) {
-    return message.attr("id") != undefined
-  }
-
-  function not_node($, message) {
-    return !is_node($, message);
-  }
-
-  function find_under_mouse_hover(instance, message) {
-    var result = instance.select().isHover();
-    return result;
-  }
-
-  function send_destroy_connection_message(outgoing_bus, message) {
-    var source = message[1].sourceId;
-    var target = message[1].targetId;
-
-    outgoing_bus.push({
-      action: "destroy",
-      args: [{
-        type: "connection",
-        source: source,
-        target: target
-      }]
-    });
-  }
 
   delete_commands
     .filter(is_node, $)
@@ -340,7 +341,6 @@ jsPlumb.ready(function() {
     .filter(type_filter, "node")
     .map(make_parent, document, node_settings)
     .map(append_to, origin_div)
-    //.map(make_target, document)
     .map(make_draggable, jsPlumb, outgoing_bus)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
@@ -362,15 +362,9 @@ jsPlumb.ready(function() {
     .filter(type_filter, "connection")
     .onValue(make_connection, jsPlumb, document)
 
-  //function destroy_connection(jsPlumb, message) {
-    //var source = message.source;
-    //var target = message.source;
-  //}
-
   var destroyed_connections = db_events
     .filter(action_filter, "destroy")
     .flatMap(extract_multiple)
     .onValue(destroy_connection, jsPlumb)
   socket.emit(channel, make_find_message());
-
 });
