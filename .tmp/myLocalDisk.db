@@ -2,84 +2,52 @@
   "data": {
     "message": [
       {
-        "x": 571,
-        "y": 124,
+        "x": 409.5,
+        "y": 139.5,
         "type": "node",
-        "createdAt": "2015-03-03T14:04:02.933Z",
-        "updatedAt": "2015-03-03T14:09:20.570Z",
-        "id": 820
+        "createdAt": "2015-03-03T14:12:46.569Z",
+        "updatedAt": "2015-03-03T14:12:46.569Z",
+        "id": 847
       },
       {
-        "x": 123,
-        "y": 169,
+        "x": 199.5,
+        "y": 277.5,
         "type": "node",
-        "createdAt": "2015-03-03T14:04:03.972Z",
-        "updatedAt": "2015-03-03T14:09:25.708Z",
-        "id": 821
+        "createdAt": "2015-03-03T14:12:47.281Z",
+        "updatedAt": "2015-03-03T14:12:47.281Z",
+        "id": 848
       },
       {
-        "x": 338,
-        "y": 412,
+        "x": 412,
+        "y": 323,
         "type": "node",
-        "createdAt": "2015-03-03T14:04:13.191Z",
-        "updatedAt": "2015-03-03T14:09:29.237Z",
-        "id": 823
+        "createdAt": "2015-03-03T14:12:47.970Z",
+        "updatedAt": "2015-03-03T14:12:49.094Z",
+        "id": 849
       },
       {
-        "x": 323,
-        "y": 17,
+        "x": 213.5,
+        "y": 103.5,
         "type": "node",
-        "createdAt": "2015-03-03T14:04:37.915Z",
-        "updatedAt": "2015-03-03T14:09:27.675Z",
-        "id": 830
+        "createdAt": "2015-03-03T14:12:57.187Z",
+        "updatedAt": "2015-03-03T14:12:57.187Z",
+        "id": 852
       },
       {
         "type": "connection",
-        "source": "node-820",
-        "target": "node-823",
-        "createdAt": "2015-03-03T14:08:44.028Z",
-        "updatedAt": "2015-03-03T14:08:44.028Z",
-        "id": 840
+        "source": "node-852",
+        "target": "node-847",
+        "createdAt": "2015-03-03T14:13:01.719Z",
+        "updatedAt": "2015-03-03T14:13:01.719Z",
+        "id": 853
       },
       {
         "type": "connection",
-        "source": "node-821",
-        "target": "node-830",
-        "createdAt": "2015-03-03T14:08:47.019Z",
-        "updatedAt": "2015-03-03T14:08:47.019Z",
-        "id": 842
-      },
-      {
-        "type": "connection",
-        "source": "node-830",
-        "target": "node-820",
-        "createdAt": "2015-03-03T14:08:49.708Z",
-        "updatedAt": "2015-03-03T14:08:49.708Z",
-        "id": 843
-      },
-      {
-        "type": "connection",
-        "source": "node-830",
-        "target": "node-823",
-        "createdAt": "2015-03-03T14:09:33.563Z",
-        "updatedAt": "2015-03-03T14:09:33.563Z",
-        "id": 844
-      },
-      {
-        "x": 410.5,
-        "y": 183.5,
-        "type": "node",
-        "createdAt": "2015-03-03T14:09:36.271Z",
-        "updatedAt": "2015-03-03T14:09:36.271Z",
-        "id": 845
-      },
-      {
-        "type": "connection",
-        "source": "node-820",
-        "target": "node-845",
-        "createdAt": "2015-03-03T14:09:38.887Z",
-        "updatedAt": "2015-03-03T14:09:38.887Z",
-        "id": 846
+        "source": "node-847",
+        "target": "node-849",
+        "createdAt": "2015-03-03T14:13:03.592Z",
+        "updatedAt": "2015-03-03T14:13:03.592Z",
+        "id": 854
       }
     ]
   },
@@ -101,7 +69,7 @@
   },
   "counters": {
     "message": {
-      "id": 846
+      "id": 854
     }
   }
 }

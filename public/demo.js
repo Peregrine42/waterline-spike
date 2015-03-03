@@ -271,17 +271,16 @@ jsPlumb.ready(function() {
 
   var delete_commands = mouse_position.sampledBy(d_down, find_element)
 
-  function has_id($, message) {
+  function is_node($, message) {
     return message.attr("id") != undefined
   }
 
-  function no_id($, message) {
-    return !has_id($, message);
+  function not_node($, message) {
+    return !is_node($, message);
   }
 
   function find_under_mouse_hover(instance, message) {
     var result = instance.select().isHover();
-    //console.log(result);
     return result;
   }
 
@@ -300,7 +299,7 @@ jsPlumb.ready(function() {
   }
 
   delete_commands
-    .filter(has_id, $)
+    .filter(is_node, $)
     .map(get_id)
     .filter(function(message) { return message != undefined })
     .onValue(function(id) {
@@ -310,7 +309,6 @@ jsPlumb.ready(function() {
   d_down
     .map(find_under_mouse_hover, jsPlumb)
     .flatMap(function(message) { return Bacon.fromArray(message) })
-    .map(function(message) { console.log(message); return message; })
     .filter(function(result) { return result[0]; })
     .onValue(send_destroy_connection_message, outgoing_bus)
 
