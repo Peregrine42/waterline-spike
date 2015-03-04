@@ -75,7 +75,7 @@ function append_to(the_parent, target) {
   return target;
 }
 
-function make_editable($, update_bus, label_bus, target) {
+function make_editable($, update_bus, target) {
   $(".editable").mousedown(function(e) {
     e.stopPropagation();
   });
@@ -447,25 +447,14 @@ jsPlumb.ready(function() {
   var onMove = $("html").asEventStream('mousemove');
   var main_dragging_deltas = new Bacon.Bus();
   var drag_stops = new Bacon.Bus();
-  var label_triggers = new Bacon.Bus();
-  var not_editing = label_triggers
-    .map(function(message) { console.log(message); return (message); })
-    .scan(
-      true,
-      function(message) {return message});
-  not_editing.onValue(function(message) { console.log(message) });
-  main_dragging_deltas.filter(not_editing).onValue(move_node, jsPlumb);
-  //main_dragging_deltas.onValue(function(message) {console.log(message)});
+  main_dragging_deltas.onValue(move_node, jsPlumb);
   outgoing_bus.plug(main_dragging_deltas
-    .filter(not_editing)
     .throttle(500)
     .map(position_update));
 
   outgoing_bus.plug(drag_stops
-    .filter(not_editing)
     .map(extract_id)
     .map(position_update));
-  // end of click and drag
 
   var new_from_db = db_events
     .filter(action_filter, "create")
@@ -480,7 +469,7 @@ jsPlumb.ready(function() {
     .filter(type_filter, "node")
     .map(make_node, document, node_settings)
     .map(append_to, origin_div)
-    .map(make_editable, $, outgoing_bus, label_triggers)
+    .map(make_editable, $, outgoing_bus)
     .map(make_draggable, jsPlumb, on_move, main_dragging_deltas, drag_stops)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
