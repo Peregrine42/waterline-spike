@@ -34,7 +34,7 @@ function clear_dom(origin_div, message) {
   return message;
 }
 
-function make_parent(the_document, dom_settings, message)
+function make_node(the_document, dom_settings, message)
 {
   var id = message.id;
   var x = message.x;
@@ -51,6 +51,7 @@ function make_parent(the_document, dom_settings, message)
       dom_id,
       x, y,
       width, height);
+
   var label_dom_element = the_document.createElement("div");
   var label_element = make_element(
       label_dom_element,
@@ -59,34 +60,30 @@ function make_parent(the_document, dom_settings, message)
       (width/2), (0-height/6),
       width, (height/3));
   if ($(".label").hasClass("hidden")) { $(label_element).addClass("hidden"); };
-  $(label_element).append("<span>" + dom_id + "</span>");
+  $(label_element).append("<span class='editable'>" + message.name + "</span>");
+
   modified_element.appendChild(label_element);
+
   return modified_element;
 }
 
-//function make_target(the_document, the_parent) {
-  //var parent_width = get_dimension(the_parent, "width");
-  //var parent_height = get_dimension(the_parent, "height");
-
-  //var width = parent_width*0.6;
-  //var height = parent_height*0.6;
-  //var x = (parent_width - width)/2;
-  //var y = (parent_height - height)/2;
-  //var dom_id = the_parent.id + "-target"
-    //var css_class = the_parent.className;
-  //var element = the_document.createElement("div");
-  //var modified_element = make_element(
-      //element,
-      //css_class,
-      //dom_id,
-      //x, y,
-      //width, height);
-  //append_to(the_parent, modified_element);
-  //return the_parent;
-//}
-
 function append_to(the_parent, target) {
   the_parent.appendChild(target);
+
+  return target;
+}
+
+function make_editable($, update_bus, target) {
+  $(".editable").editable(function(value, settings) {
+    var id = target.id.split("-")[1];
+    update_bus.push({
+      action: "update",
+      args: [ { id: id }, { name: value } ]});
+    return(value)
+  }, {
+    style : "inherit",
+    submit: "ok"
+  });
   return target;
 }
 
@@ -175,6 +172,7 @@ function make_draggable(flowchart_library, update_bus, element)
                 var new_y = e.pos[1];
                 var id = e.el.id.split("-")[1];
                 update_bus.push(make_update_message(id, new_x, new_y));
+                return false;
               }
       });
 
@@ -188,7 +186,7 @@ function destroy_node($, settings, message) {
 }
 
 function is_node($, message) {
-  return message.attr("id") != undefined
+  return message.attr("id") != undefined;
 }
 
 function not_node($, message) {
@@ -209,6 +207,7 @@ function update_node($, settings, message) {
   var e = $("#" + settings.id_prefix + id);
   e.css({ "top": y, "left": x });
 
+  e.find('span').text(message.name);
   jsPlumb.repaintEverything();
   return message;
 }
@@ -271,12 +270,24 @@ function get_id(message) {
 
 // top-level composition
 jsPlumb.ready(function() {
+
+  //var not_on_editable_stream = new Bacon.Bus();
+  //$('body').click(function(e) {
+    //console.log(!($(e).hasClass("editable")));
+    //not_on_editable_stream.push(!($(e).hasClass("editable")));
+  //});
+
+  //var not_on_editable = not_on_editable_stream.scan(
+    //false,
+    //function(existing, the_new) { return the_new });
+
   var channel = 'message';
   var socket = io();
   var origin_div = document.getElementById("diagramContainer");
 
   // outgoing to server
   var outgoing_bus = new Bacon.Bus();
+  //var express_outgoing_bus = new Bacon.Bus();
 
   var node_settings = {
     id_prefix : "node-",
@@ -285,14 +296,26 @@ jsPlumb.ready(function() {
     height    : 75
   };
 
-  outgoing_bus.onValue(function(message) {
+  outgoing_bus
+    //.filter(not_on_editable)
+    .onValue(function(message) {
     console.log('sending:', message);
     socket.emit(channel, message);
   });
 
-  var keydown = new Bacon.Bus();
+  //express_outgoing_bus
+    //.onValue(function(message) {
+    //console.log('sending:', message);
+    //socket.emit(channel, message);
+  //});
+
+  var raw_keydown = new Bacon.Bus();
   $(document).keydown(function(e) {
-    keydown.push(e);
+    raw_keydown.push(e);
+  });
+
+  var keydown = raw_keydown.filter(function(message) {
+    return ($("form").length == 0);
   });
 
   var mouse_position_events = new Bacon.Bus();
@@ -306,6 +329,8 @@ jsPlumb.ready(function() {
   var d_down = keydown.filter(function(message) {
     return message.key == "d";
   });
+
+  var editable_changed = new Bacon.Bus();
 
   var l_down = keydown.filter(function(message) {
     return message.key == "l";
@@ -361,8 +386,10 @@ jsPlumb.ready(function() {
 
   var new_nodes = new_from_db.merge(read_results)
     .filter(type_filter, "node")
-    .map(make_parent, document, node_settings)
+    .map(make_node, document, node_settings)
     .map(append_to, origin_div)
+    //.map(make_editable, $, express_outgoing_bus)
+    .map(make_editable, $, outgoing_bus)
     .map(make_draggable, jsPlumb, outgoing_bus)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
