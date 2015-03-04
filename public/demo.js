@@ -171,19 +171,45 @@ function make_element(e, css_class, id, x, y, width, height)
   return e;
 }
 
-function make_draggable(flowchart_library, update_bus, element)
+function position_from_event(v) {
+  return {
+    id: null,
+    x: v.clientX,
+    y: v.clientY
+  }
+}
+
+function get_delta(t) {
+  var a = t[1];
+  var b = t[0];
+  var result = {
+    x: a.x - b.x,
+    y: a.y - b.y
+  };
+  return result;
+}
+
+function make_draggable(flowchart_library, on_move, main_dragging_deltas, element)
 {
-  flowchart_library.draggable(
-      element,
-      { containment: "parent",
-        stop: function(e) {
-                var new_x = e.pos[0];
-                var new_y = e.pos[1];
-                var id = e.el.id.split("-")[1];
-                update_bus.push(make_update_message(id, new_x, new_y));
-                return false;
-              }
-      });
+  var block = $(element);
+
+  var start_drag = block.asEventStream('mousedown');
+  var end_drag = block.asEventStream('mouseup');
+  var selected = start_drag.map(element.id);
+
+  var dragging_deltas = start_drag
+    .flatMap(function() {
+      return on_move.map(position_from_event)
+                    .slidingWindow(2, 2)
+                    .map(get_delta)
+                    .takeUntil(end_drag);
+    })
+    .map(function(val) {
+      val.id = element.id;
+      return val;
+    });
+
+  main_dragging_deltas.plug(dragging_deltas);
 
   return element;
 }
@@ -251,8 +277,8 @@ function destroy_connection(instance, message) {
 
 function center_click(node_settings, message) {
   return {
-    x: message.x - (node_settings.width/2),
-    y: message.y - (node_settings.height/2)
+    x: (message.x - (node_settings.width/2))/0.75,
+    y: (message.y - (node_settings.height/2))/0.75
   }
 }
 
@@ -279,13 +305,6 @@ function get_id(message) {
 
 // top-level composition
 jsPlumb.ready(function() {
-
-  var not_on_editable_stream = new Bacon.Bus();
-
-  var not_on_editable = not_on_editable_stream.scan(
-    false,
-    function(existing, the_new) { console.log(the_new); return the_new });
-
   var channel = 'message';
   var socket = io();
   var origin_div = document.getElementById("diagramContainer");
@@ -302,7 +321,6 @@ jsPlumb.ready(function() {
   };
 
   outgoing_bus
-    //.filter(not_on_editable)
     .onValue(function(message) {
     console.log('sending:', message);
     socket.emit(channel, message);
@@ -366,7 +384,7 @@ jsPlumb.ready(function() {
     .onValue(send_destroy_connection_message, outgoing_bus)
 
 
-  var clicked = Bacon.fromEventTarget($("#" + mainContainer), "click");
+  var clicked = Bacon.fromEventTarget($(document), "click");
 
   clicked.bufferWithTimeOrCount(200, 2)
     .filter(function(x) { return x.length == 2 })
@@ -380,22 +398,66 @@ jsPlumb.ready(function() {
   // incoming from db
   var db_events = Bacon.fromEventTarget(socket, channel);
 
+  // click and drag
+  var on_move = $("html").asEventStream('mousemove');
+
+  function move_node(instance, s) {
+    var el = $("#"+s.id);
+    var pos = el.position();
+    var top = pos.top;
+    var left = pos.left;
+    el.css( {
+      top: top+s.y + "px",
+      left: left+s.x + "px"
+    } );
+    instance.repaintEverything();
+  }
+
+  function position_update(message) {
+    var dom_id = message.id;
+    var element = $("#" + dom_id);
+
+    var x = element.css("left");
+    var y = element.css("top");
+
+    var id = dom_id.split("-")[1];
+    return {
+      action: "update",
+      args: [ {
+        id: id,
+      },
+      {
+        x: x,
+        y: y
+      } ]
+    };
+  }
+
+  var onMove = $("html").asEventStream('mousemove');
+  var main_dragging_deltas = new Bacon.Bus();
+  main_dragging_deltas.onValue(move_node, jsPlumb);
+  main_dragging_deltas.onValue(function(message) {console.log(message)});
+  outgoing_bus.plug(main_dragging_deltas
+    .throttle(2000)
+    .map(position_update));
+
+  // end of click and drag
+
   var new_from_db = db_events
     .filter(action_filter, "create")
     .map(extract_single)
 
   var read_results = db_events
     .filter(action_filter, "find")
-    .map(clear_dom, origin_div)
+    .map(clear_dom, document.body)
     .flatMap(extract_multiple)
 
   var new_nodes = new_from_db.merge(read_results)
     .filter(type_filter, "node")
     .map(make_node, document, node_settings)
     .map(append_to, origin_div)
-    //.map(make_editable, $, express_outgoing_bus, not_on_editable_stream)
     .map(make_editable, $, outgoing_bus)
-    .map(make_draggable, jsPlumb, outgoing_bus)
+    .map(make_draggable, jsPlumb, on_move, main_dragging_deltas)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
   var updates_from_db = db_events
@@ -420,5 +482,61 @@ jsPlumb.ready(function() {
     .filter(action_filter, "destroy")
     .flatMap(extract_multiple)
     .onValue(destroy_connection, jsPlumb)
+
+
+  window.setZoom = function(zoom, instance, transformOrigin, el) {
+    transformOrigin = transformOrigin || [ 0.5, 0.5 ];
+    instance = instance || jsPlumb;
+    el = el || instance.getContainer();
+    var p = [ "webkit", "moz", "ms", "o" ],
+        s = "scale(" + zoom + ")",
+        oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
+
+    for (var i = 0; i < p.length; i++) {
+      el.style[p[i] + "Transform"] = s;
+      el.style[p[i] + "TransformOrigin"] = oString;
+    }
+
+    el.style["transform"] = s;
+    el.style["transformOrigin"] = oString;
+
+    instance.setZoom(zoom);
+    jsPlumb.repaintEverything();
+  };
+
+  //setZoom(0.75, jsPlumb, document.getElementById("diagramContainer"));
+
+
+  $(document).keydown(function(e) {
+    switch(e.which) {
+      case 37: // left
+        var jq_origin_div = $(origin_div);
+        var current_left = parseInt(jq_origin_div.css("left").split("px")[0]);
+        jq_origin_div.css({ left: current_left+10 });
+        break;
+
+      case 38: // up
+        var jq_origin_div = $(origin_div);
+        var current_top = parseInt(jq_origin_div.css("top").split("px")[0]);
+        jq_origin_div.css({ top: current_top+10 });
+        break;
+
+      case 39: // right
+        var jq_origin_div = $(origin_div);
+        var current_left = parseInt(jq_origin_div.css("left").split("px")[0]);
+        jq_origin_div.css({ left: current_left-10 });
+        break;
+
+      case 40: // down
+        var jq_origin_div = $(origin_div);
+        var current_top = parseInt(jq_origin_div.css("top").split("px")[0]);
+        jq_origin_div.css({ top: current_top-10 });
+        break;
+
+      default: return; // exit this handler for other keys
+    }
+    e.preventDefault(); // prevent the default action (scroll / move caret)
+  });
+
   socket.emit(channel, make_find_message());
 });
