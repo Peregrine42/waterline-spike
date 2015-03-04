@@ -74,6 +74,13 @@ function append_to(the_parent, target) {
 }
 
 function make_editable($, update_bus, target) {
+  $(".editable").mousedown(function(e) {
+    jsPlumb.setDraggable(target, false);
+  });
+  $(document).mouseup(function(e) {
+    jsPlumb.setDraggable(target, true);
+  });
+
   $(".editable").editable(function(value, settings) {
     var id = target.id.split("-")[1];
     update_bus.push({
@@ -271,15 +278,11 @@ function get_id(message) {
 // top-level composition
 jsPlumb.ready(function() {
 
-  //var not_on_editable_stream = new Bacon.Bus();
-  //$('body').click(function(e) {
-    //console.log(!($(e).hasClass("editable")));
-    //not_on_editable_stream.push(!($(e).hasClass("editable")));
-  //});
+  var not_on_editable_stream = new Bacon.Bus();
 
-  //var not_on_editable = not_on_editable_stream.scan(
-    //false,
-    //function(existing, the_new) { return the_new });
+  var not_on_editable = not_on_editable_stream.scan(
+    false,
+    function(existing, the_new) { console.log(the_new); return the_new });
 
   var channel = 'message';
   var socket = io();
@@ -287,7 +290,7 @@ jsPlumb.ready(function() {
 
   // outgoing to server
   var outgoing_bus = new Bacon.Bus();
-  //var express_outgoing_bus = new Bacon.Bus();
+  var express_outgoing_bus = new Bacon.Bus();
 
   var node_settings = {
     id_prefix : "node-",
@@ -303,11 +306,11 @@ jsPlumb.ready(function() {
     socket.emit(channel, message);
   });
 
-  //express_outgoing_bus
-    //.onValue(function(message) {
-    //console.log('sending:', message);
-    //socket.emit(channel, message);
-  //});
+  express_outgoing_bus
+    .onValue(function(message) {
+    console.log('sending:', message);
+    socket.emit(channel, message);
+  });
 
   var raw_keydown = new Bacon.Bus();
   $(document).keydown(function(e) {
@@ -388,7 +391,7 @@ jsPlumb.ready(function() {
     .filter(type_filter, "node")
     .map(make_node, document, node_settings)
     .map(append_to, origin_div)
-    //.map(make_editable, $, express_outgoing_bus)
+    //.map(make_editable, $, express_outgoing_bus, not_on_editable_stream)
     .map(make_editable, $, outgoing_bus)
     .map(make_draggable, jsPlumb, outgoing_bus)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)

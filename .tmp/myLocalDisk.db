@@ -1,67 +1,6 @@
 {
   "data": {
-    "message": [
-      {
-        "x": 543,
-        "y": 98,
-        "type": "node",
-        "createdAt": "2015-03-04T00:26:14.556Z",
-        "updatedAt": "2015-03-04T02:40:48.865Z",
-        "id": 904,
-        "name": "yo"
-      },
-      {
-        "x": 455,
-        "y": 207,
-        "type": "node",
-        "createdAt": "2015-03-04T00:28:07.869Z",
-        "updatedAt": "2015-03-04T02:40:59.604Z",
-        "id": 905
-      },
-      {
-        "x": 328,
-        "y": 56,
-        "type": "node",
-        "createdAt": "2015-03-04T00:28:29.088Z",
-        "updatedAt": "2015-03-04T02:51:40.800Z",
-        "id": 906,
-        "name": "maybe?"
-      },
-      {
-        "x": 273,
-        "y": 215,
-        "type": "node",
-        "createdAt": "2015-03-04T00:30:16.167Z",
-        "updatedAt": "2015-03-04T02:42:26.054Z",
-        "id": 907,
-        "name": "hello!"
-      },
-      {
-        "x": 221,
-        "y": 127,
-        "type": "node",
-        "createdAt": "2015-03-04T00:31:10.659Z",
-        "updatedAt": "2015-03-04T02:05:28.589Z",
-        "id": 908,
-        "name": "hi"
-      },
-      {
-        "type": "connection",
-        "source": "node-906",
-        "target": "node-904",
-        "createdAt": "2015-03-04T02:39:02.954Z",
-        "updatedAt": "2015-03-04T02:39:02.954Z",
-        "id": 909
-      },
-      {
-        "type": "connection",
-        "source": "node-905",
-        "target": "node-904",
-        "createdAt": "2015-03-04T02:41:02.479Z",
-        "updatedAt": "2015-03-04T02:41:02.479Z",
-        "id": 910
-      }
-    ]
+    "message": []
   },
   "schema": {
     "message": {
@@ -81,7 +20,7 @@
   },
   "counters": {
     "message": {
-      "id": 910
+      "id": 916
     }
   }
 }
