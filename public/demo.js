@@ -75,14 +75,13 @@ function append_to(the_parent, target) {
   return target;
 }
 
-function make_editable($, update_bus, target) {
+function make_editable($, update_bus, label_bus, target) {
   $(".editable").mousedown(function(e) {
-    jsPlumb.setDraggable(target, false);
+    e.stopPropagation();
   });
-  $(document).mouseup(function(e) {
-    jsPlumb.setDraggable(target, true);
+  $(".editable").mouseup(function(e) {
+    e.stopPropagation();
   });
-
   $(".editable").editable(function(value, settings) {
     var id = target.id.split("-")[1];
     update_bus.push({
@@ -174,8 +173,10 @@ function make_element(e, css_class, id, x, y, width, height)
 function position_from_event(v) {
   return {
     id: null,
-    x: v.clientX,
-    y: v.clientY
+    //x: (v.clientX * 0.75),
+    //y: (v.clientY * 0.75)
+    x: (v.clientX),
+    y: (v.clientY)
   }
 }
 
@@ -189,7 +190,12 @@ function get_delta(t) {
   return result;
 }
 
-function make_draggable(flowchart_library, on_move, main_dragging_deltas, element)
+function make_draggable(
+    flowchart_library,
+    on_move,
+    main_dragging_deltas,
+    drag_stops,
+    element)
 {
   var block = $(element);
 
@@ -210,6 +216,7 @@ function make_draggable(flowchart_library, on_move, main_dragging_deltas, elemen
     });
 
   main_dragging_deltas.plug(dragging_deltas);
+  drag_stops.plug(end_drag);
 
   return element;
 }
@@ -277,8 +284,8 @@ function destroy_connection(instance, message) {
 
 function center_click(node_settings, message) {
   return {
-    x: (message.x - (node_settings.width/2))/0.75,
-    y: (message.y - (node_settings.height/2))/0.75
+    x: (message.x - (node_settings.width/2)),
+    y: (message.y - (node_settings.height/2))
   }
 }
 
@@ -433,14 +440,31 @@ jsPlumb.ready(function() {
     };
   }
 
+  function extract_id(message) {
+    return { id: message.target.id };
+  }
+
   var onMove = $("html").asEventStream('mousemove');
   var main_dragging_deltas = new Bacon.Bus();
-  main_dragging_deltas.onValue(move_node, jsPlumb);
-  main_dragging_deltas.onValue(function(message) {console.log(message)});
+  var drag_stops = new Bacon.Bus();
+  var label_triggers = new Bacon.Bus();
+  var not_editing = label_triggers
+    .map(function(message) { console.log(message); return (message); })
+    .scan(
+      true,
+      function(message) {return message});
+  not_editing.onValue(function(message) { console.log(message) });
+  main_dragging_deltas.filter(not_editing).onValue(move_node, jsPlumb);
+  //main_dragging_deltas.onValue(function(message) {console.log(message)});
   outgoing_bus.plug(main_dragging_deltas
-    .throttle(2000)
+    .filter(not_editing)
+    .throttle(500)
     .map(position_update));
 
+  outgoing_bus.plug(drag_stops
+    .filter(not_editing)
+    .map(extract_id)
+    .map(position_update));
   // end of click and drag
 
   var new_from_db = db_events
@@ -456,8 +480,8 @@ jsPlumb.ready(function() {
     .filter(type_filter, "node")
     .map(make_node, document, node_settings)
     .map(append_to, origin_div)
-    .map(make_editable, $, outgoing_bus)
-    .map(make_draggable, jsPlumb, on_move, main_dragging_deltas)
+    .map(make_editable, $, outgoing_bus, label_triggers)
+    .map(make_draggable, jsPlumb, on_move, main_dragging_deltas, drag_stops)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
   var updates_from_db = db_events
@@ -484,28 +508,29 @@ jsPlumb.ready(function() {
     .onValue(destroy_connection, jsPlumb)
 
 
-  window.setZoom = function(zoom, instance, transformOrigin, el) {
-    transformOrigin = transformOrigin || [ 0.5, 0.5 ];
-    instance = instance || jsPlumb;
-    el = el || instance.getContainer();
-    var p = [ "webkit", "moz", "ms", "o" ],
-        s = "scale(" + zoom + ")",
-        oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
+  //window.setZoom = function(zoom, instance, transformOrigin, el) {
+    //transformOrigin = transformOrigin || [ 0.5, 0.5 ];
+    //instance = instance || jsPlumb;
+    //el = el || instance.getContainer();
+    //var p = [ "webkit", "moz", "ms", "o" ],
+        //s = "scale(" + zoom + ")",
+        //oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
 
-    for (var i = 0; i < p.length; i++) {
-      el.style[p[i] + "Transform"] = s;
-      el.style[p[i] + "TransformOrigin"] = oString;
-    }
+    //for (var i = 0; i < p.length; i++) {
+      //el.style[p[i] + "Transform"] = s;
+      //el.style[p[i] + "TransformOrigin"] = oString;
+    //}
 
-    el.style["transform"] = s;
-    el.style["transformOrigin"] = oString;
+    //el.style["transform"] = s;
+    //el.style["transformOrigin"] = oString;
 
-    instance.setZoom(zoom);
-    jsPlumb.repaintEverything();
-  };
+    //instance.setZoom(zoom);
+    //jsPlumb.repaintEverything();
+  //};
 
-  //setZoom(0.75, jsPlumb, document.getElementById("diagramContainer"));
+  //setZoom(0.75, jsPlumb, null, null);
 
+  //zoom.to({scale: 2});
 
   $(document).keydown(function(e) {
     switch(e.which) {
