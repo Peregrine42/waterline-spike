@@ -55,11 +55,13 @@ function make_node(the_document, dom_settings, message)
   var label_dom_element = the_document.createElement("div");
   var label_element = make_element(
       label_dom_element,
-      "label",
+      "label hidden",
       dom_id + "-label",
       (width/2), (0-height/6),
       width, (height/3));
-  if ($(".label").hasClass("hidden")) { $(label_element).addClass("hidden"); };
+  if (!$(".label").hasClass("hidden") && $(".label").length > 0) {
+    $(label_element).removeClass("hidden");
+  };
   $(label_element).append("<span class='editable'>" + message.name + "</span>");
 
   modified_element.appendChild(label_element);
@@ -143,7 +145,7 @@ function add_endpoint(instance, update_bus, element) {
     maxConnections: -1,
     isSource: true,
     isTarget: true,
-    endpoint: "Dot",
+    endpoint: "Rectangle",
     paintStyle: {
       fillStyle: "blue",
       radius: 10
