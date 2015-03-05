@@ -1,48 +1,6 @@
 {
   "data": {
-    "message": [
-      {
-        "x": "345.5px",
-        "y": "126.5px",
-        "type": "node",
-        "createdAt": "2015-03-04T23:28:01.919Z",
-        "updatedAt": "2015-03-04T23:39:38.469Z",
-        "id": 1,
-        "name": "yo yo yo"
-      },
-      {
-        "x": "68.5px",
-        "y": "220.5px",
-        "type": "node",
-        "createdAt": "2015-03-04T23:28:02.595Z",
-        "updatedAt": "2015-03-04T23:39:35.440Z",
-        "id": 2
-      },
-      {
-        "type": "connection",
-        "source": "node-2",
-        "target": "node-1",
-        "createdAt": "2015-03-04T23:28:04.319Z",
-        "updatedAt": "2015-03-04T23:32:18.513Z",
-        "id": 3
-      },
-      {
-        "x": "89.5px",
-        "y": "19.5px",
-        "type": "node",
-        "createdAt": "2015-03-04T23:36:52.821Z",
-        "updatedAt": "2015-03-04T23:39:27.350Z",
-        "id": 4
-      },
-      {
-        "type": "connection",
-        "source": "node-2",
-        "target": "node-4",
-        "createdAt": "2015-03-04T23:36:55.983Z",
-        "updatedAt": "2015-03-04T23:36:55.983Z",
-        "id": 5
-      }
-    ]
+    "message": []
   },
   "schema": {
     "message": {
@@ -62,7 +20,7 @@
   },
   "counters": {
     "message": {
-      "id": 5
+      "id": 20
     }
   }
 }

@@ -200,7 +200,10 @@ function make_draggable(
   var block = $(element);
 
   var start_drag = block.asEventStream('mousedown');
-  var end_drag = block.asEventStream('mouseup');
+  block.mousedown(function(e) {
+    e.preventDefault();
+  });
+  var end_drag = $('html').asEventStream('mouseup');
   var selected = start_drag.map(element.id);
 
   var dragging_deltas = start_drag
