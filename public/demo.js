@@ -1,6 +1,6 @@
-var mainContainer = "diagramContainer";
+var mainContainer = $("#diagramContainer");
 
-jsPlumb.setContainer($("#" + mainContainer));
+jsPlumb.setContainer(mainContainer);
 
 // utility functions
 function curry(fn) {
@@ -113,7 +113,7 @@ function make_update_message(id, x, y) {
 
 function make_find_message() {
   return {
-    action: 'find',
+    action: "find",
     args: {}
   }
 }
@@ -190,6 +190,10 @@ function get_delta(t) {
   return result;
 }
 
+function has_valid_target(e) {
+  return !$(e.target).is("html");
+}
+
 function make_draggable(
     flowchart_library,
     on_move,
@@ -199,11 +203,11 @@ function make_draggable(
 {
   var block = $(element);
 
-  var start_drag = block.asEventStream('mousedown');
+  var start_drag = block.asEventStream("mousedown");
   block.mousedown(function(e) {
     e.preventDefault();
   });
-  var end_drag = $('html').asEventStream('mouseup');
+  var end_drag = $("html").asEventStream("mouseup");
   var selected = start_drag.map(element.id);
 
   var dragging_deltas = start_drag
@@ -219,7 +223,7 @@ function make_draggable(
     });
 
   main_dragging_deltas.plug(dragging_deltas);
-  drag_stops.plug(end_drag);
+  drag_stops.plug(end_drag.filter(has_valid_target));
 
   return element;
 }
@@ -252,7 +256,7 @@ function update_node($, settings, message) {
   var e = $("#" + settings.id_prefix + id);
   e.css({ "top": y, "left": x });
 
-  e.find('span').text(message.name);
+  e.find("span").text(message.name);
   jsPlumb.repaintEverything();
   return message;
 }
@@ -315,7 +319,7 @@ function get_id(message) {
 
 // top-level composition
 jsPlumb.ready(function() {
-  var channel = 'message';
+  var channel = "message";
   var socket = io();
   var origin_div = document.getElementById("diagramContainer");
 
@@ -332,13 +336,13 @@ jsPlumb.ready(function() {
 
   outgoing_bus
     .onValue(function(message) {
-    console.log('sending:', message);
+    console.log("sending:", message);
     socket.emit(channel, message);
   });
 
   express_outgoing_bus
     .onValue(function(message) {
-    console.log('sending:', message);
+    console.log("sending:", message);
     socket.emit(channel, message);
   });
 
@@ -350,6 +354,36 @@ jsPlumb.ready(function() {
   var keydown = raw_keydown.filter(function(message) {
     return ($("form").length == 0);
   });
+
+  function handle_arrowkeys($, origin_div, e) {
+    var jq_origin_div = $(origin_div);
+    switch(e.which) {
+      case 37: // left
+        var current_left = parseInt(jq_origin_div.css("left").split("px")[0]);
+        jq_origin_div.css({ left: current_left+10 });
+        break;
+
+      case 38: // up
+        var current_top = parseInt(jq_origin_div.css("top").split("px")[0]);
+        jq_origin_div.css({ top: current_top+10 });
+        break;
+
+      case 39: // right
+        var current_left = parseInt(jq_origin_div.css("left").split("px")[0]);
+        jq_origin_div.css({ left: current_left-10 });
+        break;
+
+      case 40: // down
+        var current_top = parseInt(jq_origin_div.css("top").split("px")[0]);
+        jq_origin_div.css({ top: current_top-10 });
+        break;
+
+      default: return;
+    }
+    e.preventDefault();
+  }
+
+  keydown.onValue(handle_arrowkeys, $, origin_div);
 
   var mouse_position_events = new Bacon.Bus();
   $(document).mousemove(function(event) {
@@ -384,7 +418,7 @@ jsPlumb.ready(function() {
     .map(get_id)
     .filter(function(message) { return message != undefined })
     .onValue(function(id) {
-      socket.emit(channel, {action: 'destroy', args: [{ id: id }]});
+      socket.emit(channel, {action: "destroy", args: [{ id: id }]});
     });
 
   d_down
@@ -409,7 +443,7 @@ jsPlumb.ready(function() {
   var db_events = Bacon.fromEventTarget(socket, channel);
 
   // click and drag
-  var on_move = $("html").asEventStream('mousemove');
+  var on_move = $("html").asEventStream("mousemove");
 
   function move_node(instance, s) {
     var el = $("#"+s.id);
@@ -447,7 +481,7 @@ jsPlumb.ready(function() {
     return { id: message.target.id };
   }
 
-  var onMove = $("html").asEventStream('mousemove');
+  var onMove = $("html").asEventStream("mousemove");
   var main_dragging_deltas = new Bacon.Bus();
   var drag_stops = new Bacon.Bus();
   main_dragging_deltas.onValue(move_node, jsPlumb);
@@ -465,7 +499,7 @@ jsPlumb.ready(function() {
 
   var read_results = db_events
     .filter(action_filter, "find")
-    .map(clear_dom, document.body)
+    .map(clear_dom, mainContainer)
     .flatMap(extract_multiple)
 
   var new_nodes = new_from_db.merge(read_results)
@@ -523,37 +557,6 @@ jsPlumb.ready(function() {
   //setZoom(0.75, jsPlumb, null, null);
 
   //zoom.to({scale: 2});
-
-  $(document).keydown(function(e) {
-    switch(e.which) {
-      case 37: // left
-        var jq_origin_div = $(origin_div);
-        var current_left = parseInt(jq_origin_div.css("left").split("px")[0]);
-        jq_origin_div.css({ left: current_left+10 });
-        break;
-
-      case 38: // up
-        var jq_origin_div = $(origin_div);
-        var current_top = parseInt(jq_origin_div.css("top").split("px")[0]);
-        jq_origin_div.css({ top: current_top+10 });
-        break;
-
-      case 39: // right
-        var jq_origin_div = $(origin_div);
-        var current_left = parseInt(jq_origin_div.css("left").split("px")[0]);
-        jq_origin_div.css({ left: current_left-10 });
-        break;
-
-      case 40: // down
-        var jq_origin_div = $(origin_div);
-        var current_top = parseInt(jq_origin_div.css("top").split("px")[0]);
-        jq_origin_div.css({ top: current_top-10 });
-        break;
-
-      default: return; // exit this handler for other keys
-    }
-    e.preventDefault(); // prevent the default action (scroll / move caret)
-  });
 
   socket.emit(channel, make_find_message());
 });
