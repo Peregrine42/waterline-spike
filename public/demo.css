@@ -22,6 +22,10 @@
   color: black;
 }
 
+.dragging {
+  background-color: lightblue;
+}
+
 .hidden {
   opacity: 0;
 }
@@ -31,6 +35,7 @@
 }
 
 ._jsPlumb_endpoint {
+  background-color: black;
   z-index: 300;
   opacity: 0.1;
 }

@@ -24,6 +24,7 @@ function make_draggable(
     flowchart_library,
     on_move,
     main_dragging_deltas,
+    drag_starts,
     drag_stops,
     element)
 {
@@ -48,6 +49,7 @@ function make_draggable(
       return val;
     });
 
+  drag_starts.plug(start_drag.filter(has_valid_target));
   main_dragging_deltas.plug(dragging_deltas);
   drag_stops.plug(end_drag.filter(has_valid_target));
 

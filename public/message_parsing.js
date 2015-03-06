@@ -32,7 +32,7 @@ function make_connection_message(source, target) {
 function position_update(message) {
   return {
     action: "update",
-    args: [ message ]
+    args: [ { id: message.id }, message ]
   };
 }
 
@@ -58,4 +58,3 @@ function send_destroy_connection_message(outgoing_bus, message) {
     }]
   });
 }
-

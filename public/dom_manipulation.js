@@ -1,4 +1,4 @@
-function clear_dom(origin_div, message) {
+function clear_dom($, origin_div, message) {
   $("." + message.type).remove();
   return message;
 }
@@ -104,7 +104,6 @@ function add_endpoint(instance, update_bus, element) {
     isTarget: true,
     endpoint: "Rectangle",
     paintStyle: {
-      fillStyle: "blue",
       radius: 10
     },
     beforeDrop: function(e) {
@@ -141,7 +140,7 @@ function destroy_connection(instance, message) {
   if (conn) { instance.detach(conn); };
 }
 
-function to_message(e) {
+function to_message(mainContainer, e) {
   var e = e[0];
   var parentOffset = mainContainer.offset();
   var relX = e.originalEvent.pageX - (parentOffset.left);
@@ -157,7 +156,7 @@ function get_id(message) {
   return message.attr("id").split("-")[1];
 };
 
-function move_node(instance, s) {
+function set_node_position(instance, s) {
   var el = $("#"+s.id);
   var pos = el.position();
   var top = pos.top;
@@ -203,6 +202,7 @@ function update_node($, settings, message) {
   var y = message.y;
 
   var e = $("#" + settings.id_prefix + id);
+  //e.animate({ "top": y, "left": x }, 500);
   e.css({ "top": y, "left": x });
 
   e.find("span").text(message.name);
@@ -244,4 +244,3 @@ function center_click(node_settings, message) {
     y: (message.y - (node_settings.height/2))
   }
 }
-

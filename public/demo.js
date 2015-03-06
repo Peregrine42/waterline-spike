@@ -9,7 +9,6 @@ jsPlumb.ready(function() {
 
   // outgoing to server
   var outgoing_bus = new Bacon.Bus();
-  var express_outgoing_bus = new Bacon.Bus();
 
   var node_settings = {
     id_prefix : "node-",
@@ -19,12 +18,6 @@ jsPlumb.ready(function() {
   };
 
   outgoing_bus
-    .onValue(function(message) {
-    console.log("sending:", message);
-    socket.emit(channel, message);
-  });
-
-  express_outgoing_bus
     .onValue(function(message) {
     console.log("sending:", message);
     socket.emit(channel, message);
@@ -88,7 +81,7 @@ jsPlumb.ready(function() {
 
   clicked.bufferWithTimeOrCount(200, 2)
     .filter(function(x) { return x.length == 2 })
-    .map(to_message)
+    .map(to_message, mainContainer)
     .map(center_click, node_settings)
     .map(set_type_to_node)
     .onValue(function(message) {
@@ -101,14 +94,39 @@ jsPlumb.ready(function() {
   // click and drag
   var on_move = $("html").asEventStream("mousemove");
 
-  var onMove = $("html").asEventStream("mousemove");
-  var main_dragging_deltas = new Bacon.Bus();
+  function add_marker_class(class_name, el)
+  {
+    el.addClass(class_name);
+  }
+
+  function remove_marker_class(class_name, el)
+  {
+    el.removeClass(class_name);
+  }
+
+  function find_element($, ev)
+  {
+    console.log(ev);
+    var el = $("#"+ ev.target.id);
+    return el;
+  }
+
+  var dragging_deltas = new Bacon.Bus();
   var drag_stops = new Bacon.Bus();
-  main_dragging_deltas.onValue(move_node, jsPlumb);
-  outgoing_bus.plug(main_dragging_deltas
+  var drag_starts = new Bacon.Bus();
+  dragging_deltas.onValue(set_node_position, jsPlumb);
+  drag_starts
+    .map(find_element, $)
+    .onValue(add_marker_class, "dragging");
+
+  outgoing_bus.plug(dragging_deltas
     .throttle(500)
     .map(get_position, $)
     .map(position_update));
+
+  drag_stops
+    .map(find_element, $)
+    .onValue(remove_marker_class, "dragging");
 
   outgoing_bus.plug(drag_stops
     .map(extract_id)
@@ -120,7 +138,7 @@ jsPlumb.ready(function() {
 
   var read_results = db_events
     .filter(message_filter, "action", "find")
-    .map(clear_dom, mainContainer)
+    .map(clear_dom, $, mainContainer)
     .flatMap(extract_multiple, Bacon)
 
   var new_nodes = new_from_db.merge(read_results)
@@ -129,7 +147,12 @@ jsPlumb.ready(function() {
     .map(add_label, $, document, node_settings)
     .map(append_to, origin_div)
     .map(make_editable, $, outgoing_bus)
-    .map(make_draggable, jsPlumb, on_move, main_dragging_deltas, drag_stops)
+    .map(make_draggable,
+        jsPlumb,
+        on_move,
+        dragging_deltas,
+        drag_starts,
+        drag_stops)
     .onValue(add_endpoint, jsPlumb, outgoing_bus)
 
   var updates_from_db = db_events
