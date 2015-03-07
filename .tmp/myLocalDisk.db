@@ -2,76 +2,28 @@
   "data": {
     "message": [
       {
-        "x": "302.5px",
-        "y": "181.583px",
+        "x": 552,
+        "y": 118,
         "type": "node",
-        "createdAt": "2015-03-06T19:10:55.739Z",
-        "updatedAt": "2015-03-06T21:13:44.830Z",
-        "id": 94
+        "createdAt": "2015-03-07T00:25:09.181Z",
+        "updatedAt": "2015-03-07T00:31:28.310Z",
+        "id": 139
       },
       {
-        "x": "364.5px",
-        "y": "15.5px",
+        "x": 236,
+        "y": 95,
         "type": "node",
-        "createdAt": "2015-03-06T19:10:56.719Z",
-        "updatedAt": "2015-03-06T21:13:54.510Z",
-        "id": 95
+        "createdAt": "2015-03-07T00:25:10.325Z",
+        "updatedAt": "2015-03-07T00:30:50.758Z",
+        "id": 140
       },
       {
-        "type": "connection",
-        "source": "node-95",
-        "target": "node-94",
-        "createdAt": "2015-03-06T19:12:31.921Z",
-        "updatedAt": "2015-03-06T19:12:31.921Z",
-        "id": 96
-      },
-      {
-        "x": "582.333px",
-        "y": "102.083px",
+        "x": 131,
+        "y": 181,
         "type": "node",
-        "createdAt": "2015-03-06T19:12:35.207Z",
-        "updatedAt": "2015-03-06T21:15:53.447Z",
-        "id": 97
-      },
-      {
-        "type": "connection",
-        "source": "node-95",
-        "target": "node-97",
-        "createdAt": "2015-03-06T19:12:37.377Z",
-        "updatedAt": "2015-03-06T19:12:37.377Z",
-        "id": 98
-      },
-      {
-        "type": "connection",
-        "source": "node-97",
-        "target": "node-94",
-        "createdAt": "2015-03-06T20:56:15.383Z",
-        "updatedAt": "2015-03-06T20:56:15.383Z",
-        "id": 99
-      },
-      {
-        "x": "481.5px",
-        "y": "254.5px",
-        "type": "node",
-        "createdAt": "2015-03-06T21:15:58.950Z",
-        "updatedAt": "2015-03-06T21:16:12.818Z",
-        "id": 100
-      },
-      {
-        "type": "connection",
-        "source": "node-97",
-        "target": "node-100",
-        "createdAt": "2015-03-06T21:16:01.002Z",
-        "updatedAt": "2015-03-06T21:16:01.002Z",
-        "id": 101
-      },
-      {
-        "type": "connection",
-        "source": "node-94",
-        "target": "node-100",
-        "createdAt": "2015-03-06T21:16:10.256Z",
-        "updatedAt": "2015-03-06T21:16:10.256Z",
-        "id": 102
+        "createdAt": "2015-03-07T00:32:26.477Z",
+        "updatedAt": "2015-03-07T00:32:53.991Z",
+        "id": 145
       }
     ]
   },
@@ -93,7 +45,7 @@
   },
   "counters": {
     "message": {
-      "id": 102
+      "id": 145
     }
   }
 }

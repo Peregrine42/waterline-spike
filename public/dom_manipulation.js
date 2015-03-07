@@ -3,59 +3,61 @@ function clear_dom($, origin_div, message) {
   return message;
 }
 
-function make_node(the_document, dom_settings, message)
+function create_div($, message)
 {
+  var element = $("<div></div>");
+  return [message, element]
+}
+
+function append_div(target, element)
+{
+  target.append(element);
+  return element;
+}
+
+function make_node(dom_settings, composite_message)
+{
+  var message = composite_message[0];
+  var element = composite_message[1];
+
   var id = message.id;
   var x = message.x;
   var y = message.y;
 
-  var css_class = dom_settings.css_class;
-  var dom_id = dom_settings.id_prefix + id;
-  var width = dom_settings.width;
-  var height = dom_settings.height;
-  var element = the_document.createElement("div");
-  var modified_element = make_element(
-      element,
-      css_class,
-      dom_id,
-      x, y,
-      width, height);
+  var css_class = "node";
+  var dom_id = "node-" + id;
+  element.attr({"id": dom_id });
+  element.addClass(css_class);
+  element.css({
+    top: y,
+    left: x,
+  })
 
-
-  return [message, modified_element];
+  return [message, element];
 }
 
-function add_label($, the_document, dom_settings, message) {
-  var original_message = message[0];
-  var modified_element = message[1];
+function add_label(dom_settings, composite_message) {
+  var message = composite_message[0];
+  var element = composite_message[1];
 
   var id = message.id;
-  var width = dom_settings.width;
-  var height = dom_settings.height;
   var dom_id = dom_settings.id_prefix + id;
 
-  var label_x = (width/2);
-  var label_y = (0-height/6);
-  var label_width = width;
-  var label_height = (height/3);
-  var label_dom_element = the_document.createElement("div");
-  var label_element = make_element(
-      label_dom_element,
-      "label hidden",
-      dom_id + "-label",
-      label_x, label_y,
-      label_width, label_height);
+  var label_element = $("<div></div>");
+  label_element.attr({"id": id });
+  label_element.addClass("label hidden");
+
   if (!$(".label").hasClass("hidden") && $(".label").length > 0) {
-    $(label_element).removeClass("hidden");
+    label_element.removeClass("hidden");
   };
-  $(label_element)
+  label_element
     .append(
         "<span class='editable'>" +
-          original_message.name +
+          message.name +
         "</span>");
 
-  modified_element.appendChild(label_element);
-  return modified_element;
+  element.append(label_element);
+  return element;
 }
 
 function append_to(the_parent, target) {
@@ -97,7 +99,7 @@ function make_connection(instance, the_document, message) {
 
 function add_endpoint(instance, update_bus, element) {
   var endpoint = instance.addEndpoint(element, {
-    uuid: element.getAttribute("id") + "-center",
+    uuid: element.attr("id") + "-center",
     anchor: "Center",
     maxConnections: -1,
     isSource: true,
@@ -113,18 +115,17 @@ function add_endpoint(instance, update_bus, element) {
   });
 }
 
-function make_element(e, css_class, id, x, y, width, height)
+function make_element(element, css_class, id, x, y)
 {
-  e.id = id;
-  e.className = css_class;
-  var element = $(e);
-  element.css({
-    top: y,
-    left: x,
-    width: width,
-    height: height
-  })
-  return e;
+  element.attr({"id": id });
+  element.addClass(css_class);
+  if (x != undefined || y != undefined) {
+    element.css({
+      top: y,
+      left: x,
+    })
+  }
+  return element;
 }
 
 function destroy_endpoint(instance, node_settings, message) {
@@ -148,7 +149,7 @@ function to_message(mainContainer, e) {
   return { x: relX, y: relY };
 };
 
-function find_element(position, message) {
+function mouse_pick(position, message) {
   return $(document.elementFromPoint(position.x, position.y));
 };
 
@@ -157,7 +158,7 @@ function get_id(message) {
 };
 
 function set_node_position(instance, s) {
-  var el = $("#"+s.id);
+  var el = $("#"+ "node-" + s.id);
   var pos = el.position();
   var top = pos.top;
   var left = pos.left;
@@ -169,19 +170,17 @@ function set_node_position(instance, s) {
 }
 
 function get_position($, message) {
-  var dom_id = message.id;
+  var dom_id = "node-" + message.id;
   var element = $("#" + dom_id);
 
-  var x = element.css("left");
-  var y = element.css("top");
+  var x = parseInt(element.css("left").split("px")[0]);
+  var y = parseInt(element.css("top").split("px")[0]);
 
-  var id = dom_id.split("-")[1];
-
-  return { id: id, x: x, y: y };
+  return { id: message.id, x: x, y: y };
 }
 
 function destroy_node($, settings, message) {
-  var e = $("#" + settings.id_prefix + message.id);
+  var e = $("#" + "node-" + message.id);
   e.remove();
   return message;
 }
@@ -195,18 +194,27 @@ function find_under_mouse_hover(instance, message) {
   return result;
 }
 
+function being_dragged(element)
+{
+  return element.hasClass("dragging");
+}
+
+function listener() { jsPlumb.repaintEverything(); }
+
 function update_node($, settings, message) {
   var id = message.id;
 
   var x = message.x;
   var y = message.y;
 
-  var e = $("#" + settings.id_prefix + id);
-  //e.animate({ "top": y, "left": x }, 500);
-  e.css({ "top": y, "left": x });
+  var e = $("#" + "node-" + id);
+  if (!being_dragged(e)) {
+    e.velocity(
+      { "top": y, "left": x },
+      { duration: 100, progress: listener, complete: listener });
+  }
 
   e.find("span").text(message.name);
-  jsPlumb.repaintEverything();
   return message;
 }
 

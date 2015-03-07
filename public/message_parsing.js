@@ -37,7 +37,7 @@ function position_update(message) {
 }
 
 function extract_id(message) {
-  return { id: message.target.id };
+  return { id: message.target.id.split("-")[1] };
 }
 
 function set_type_to_node(message) {

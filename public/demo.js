@@ -60,7 +60,7 @@ jsPlumb.ready(function() {
     }
   });
 
-  var delete_commands = mouse_position.sampledBy(d_down, find_element)
+  var delete_commands = mouse_position.sampledBy(d_down, mouse_pick)
 
   delete_commands
     .filter(has_id)
@@ -106,7 +106,6 @@ jsPlumb.ready(function() {
 
   function find_element($, ev)
   {
-    console.log(ev);
     var el = $("#"+ ev.target.id);
     return el;
   }
@@ -119,10 +118,11 @@ jsPlumb.ready(function() {
     .map(find_element, $)
     .onValue(add_marker_class, "dragging");
 
-  outgoing_bus.plug(dragging_deltas
-    .throttle(500)
-    .map(get_position, $)
-    .map(position_update));
+  // constantly updating drag and drop
+  //outgoing_bus.plug(dragging_deltas
+    //.throttle(500)
+    //.map(get_position, $)
+    //.map(position_update));
 
   drag_stops
     .map(find_element, $)
@@ -130,8 +130,10 @@ jsPlumb.ready(function() {
 
   outgoing_bus.plug(drag_stops
     .map(extract_id)
+    .map(get_position, $)
     .map(position_update));
 
+  db_events.onValue(function(message) { console.log("received:", message) } );
   var new_from_db = db_events
     .filter(message_filter, "action", "create")
     .map(extract_single)
@@ -143,9 +145,10 @@ jsPlumb.ready(function() {
 
   var new_nodes = new_from_db.merge(read_results)
     .filter(message_filter, "type", "node")
-    .map(make_node, document, node_settings)
-    .map(add_label, $, document, node_settings)
-    .map(append_to, origin_div)
+    .map(create_div, $)
+    .map(make_node, node_settings)
+    .map(add_label, node_settings)
+    .map(append_div, mainContainer)
     .map(make_editable, $, outgoing_bus)
     .map(make_draggable,
         jsPlumb,

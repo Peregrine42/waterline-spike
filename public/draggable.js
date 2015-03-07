@@ -17,7 +17,7 @@ function get_delta(t) {
 }
 
 function has_valid_target(e) {
-  return !$(e.target).is("html");
+  return $(e.target).hasClass("node");
 }
 
 function make_draggable(
@@ -28,14 +28,12 @@ function make_draggable(
     drag_stops,
     element)
 {
-  var block = $(element);
-
-  var start_drag = block.asEventStream("mousedown");
-  block.mousedown(function(e) {
+  var start_drag = element.asEventStream("mousedown");
+  element.mousedown(function(e) {
     e.preventDefault();
   });
   var end_drag = $("html").asEventStream("mouseup");
-  var selected = start_drag.map(element.id);
+  var selected = start_drag.map(element.attr("id"));
 
   var dragging_deltas = start_drag
     .flatMap(function() {
@@ -45,7 +43,7 @@ function make_draggable(
                     .takeUntil(end_drag);
     })
     .map(function(val) {
-      val.id = element.id;
+      val.id = element.attr("id").split("-")[1];
       return val;
     });
 
