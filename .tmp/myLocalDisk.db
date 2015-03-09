@@ -1,39 +1,6 @@
 {
   "data": {
-    "message": [
-      {
-        "x": 252,
-        "y": 43,
-        "type": "node",
-        "createdAt": "2015-03-09T14:32:07.661Z",
-        "updatedAt": "2015-03-09T14:38:40.951Z",
-        "id": 146
-      },
-      {
-        "x": 619,
-        "y": 156,
-        "type": "node",
-        "createdAt": "2015-03-09T14:32:08.831Z",
-        "updatedAt": "2015-03-09T14:38:30.337Z",
-        "id": 147
-      },
-      {
-        "x": 319,
-        "y": 248,
-        "type": "node",
-        "createdAt": "2015-03-09T14:32:16.101Z",
-        "updatedAt": "2015-03-09T14:38:34.893Z",
-        "id": 148
-      },
-      {
-        "type": "connection",
-        "source": "node-148",
-        "target": "node-147",
-        "createdAt": "2015-03-09T14:38:57.524Z",
-        "updatedAt": "2015-03-09T14:38:57.524Z",
-        "id": 152
-      }
-    ]
+    "message": []
   },
   "schema": {
     "message": {
@@ -53,7 +20,7 @@
   },
   "counters": {
     "message": {
-      "id": 152
+      "id": 179
     }
   }
 }

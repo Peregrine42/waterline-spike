@@ -67,7 +67,7 @@ jsPlumb.ready(function() {
     .map(get_id)
     .filter(function(message) { return message != undefined })
     .onValue(function(id) {
-      socket.emit(channel, {action: "destroy", args: [{ id: id }]});
+      socket.emit(channel, destroy_node_message(id));
     });
 
   d_down
@@ -85,7 +85,7 @@ jsPlumb.ready(function() {
     .map(center_click, node_settings)
     .map(set_type_to_node)
     .onValue(function(message) {
-      socket.emit(channel, { action: "create", args: [message] });
+      socket.emit(channel, create_node_message(message));
     });
 
   // incoming from db

@@ -60,14 +60,17 @@ function database_request(message) {
         sink({ author: message.author, content: { action: 'find', args: response} });
       });
     } else if (action == 'create') {
+      console.log("type", message.content.type);
       app.models.message.create(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'create', args: response} });
       });
     } else if (action == 'update') {
+      console.log("type", message.content.type);
       app.models.message.update(args[0], args[1]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'update', args: response} });
       });
     } else if (action == 'destroy') {
+      console.log("type", message.content.type);
       app.models.message.destroy(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'destroy', args: response} });
       });

@@ -29,8 +29,17 @@ function make_connection_message(source, target) {
   }
 }
 
+function create_node_message(message) {
+  return { type: "node", action: "create", args: [message] };
+}
+
+function destroy_node_message(id) {
+  return { type: "node", action: "destroy", args: [{ id: id }] };
+}
+
 function position_update(message) {
   return {
+    type: "node",
     action: "update",
     args: [ { id: message.id }, message ]
   };
