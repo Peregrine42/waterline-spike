@@ -1,9 +1,89 @@
 {
   "data": {
-    "message": []
+    "message": [],
+    "graph_node": [
+      {
+        "x": 248.5,
+        "y": 119.5,
+        "type": "graph_node",
+        "createdAt": "2015-03-09T15:59:04.375Z",
+        "updatedAt": "2015-03-09T15:59:04.375Z",
+        "id": 19
+      },
+      {
+        "x": 582,
+        "y": 215,
+        "type": "graph_node",
+        "createdAt": "2015-03-09T15:59:11.472Z",
+        "updatedAt": "2015-03-09T16:00:35.653Z",
+        "id": 20
+      },
+      {
+        "x": 452,
+        "y": 223,
+        "type": "graph_node",
+        "createdAt": "2015-03-09T15:59:25.686Z",
+        "updatedAt": "2015-03-09T16:00:39.252Z",
+        "id": 21
+      },
+      {
+        "x": 351,
+        "y": 90,
+        "type": "graph_node",
+        "createdAt": "2015-03-09T16:00:09.663Z",
+        "updatedAt": "2015-03-09T16:00:14.670Z",
+        "id": 22
+      }
+    ],
+    "connection": [
+      {
+        "type": "connection",
+        "source": "node-22",
+        "target": "node-21",
+        "createdAt": "2015-03-09T16:00:11.229Z",
+        "updatedAt": "2015-03-09T16:00:11.229Z",
+        "id": 8
+      },
+      {
+        "type": "connection",
+        "source": "node-19",
+        "target": "node-21",
+        "createdAt": "2015-03-09T16:00:13.356Z",
+        "updatedAt": "2015-03-09T16:00:13.356Z",
+        "id": 9
+      }
+    ]
   },
   "schema": {
     "message": {
+      "id": {
+        "type": "integer",
+        "autoIncrement": true,
+        "primaryKey": true,
+        "unique": true
+      },
+      "createdAt": {
+        "type": "datetime"
+      },
+      "updatedAt": {
+        "type": "datetime"
+      }
+    },
+    "graph_node": {
+      "id": {
+        "type": "integer",
+        "autoIncrement": true,
+        "primaryKey": true,
+        "unique": true
+      },
+      "createdAt": {
+        "type": "datetime"
+      },
+      "updatedAt": {
+        "type": "datetime"
+      }
+    },
+    "connection": {
       "id": {
         "type": "integer",
         "autoIncrement": true,
@@ -21,6 +101,12 @@
   "counters": {
     "message": {
       "id": 179
+    },
+    "graph_node": {
+      "id": 22
+    },
+    "connection": {
+      "id": 10
     }
   }
 }

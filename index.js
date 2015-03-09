@@ -1,5 +1,7 @@
-var Waterline = require('waterline');
-var Message   = require('./models/message');
+var Waterline  = require('waterline');
+var Message    = require('./models/message');
+var GraphNode  = require('./models/graph_node');
+var Connection = require('./models/connection');
 var Bacon   = require('baconjs')
 var express = require('express');
 var _       = require('underscore');
@@ -26,6 +28,8 @@ var config = {
 
 var orm = new Waterline();
 orm.loadCollection(Message);
+orm.loadCollection(GraphNode);
+orm.loadCollection(Connection);
 
 app = require('./routes/root').modify(app);
 app = require('./routes/handlebars').modify(app);
@@ -56,22 +60,27 @@ function database_request(message) {
     var action = message.content.action;
     var args = message.content.args;
     if (action == 'find') {
-      app.models.message.find(args[0]).exec(function(err, response) {
-        sink({ author: message.author, content: { action: 'find', args: response} });
+      console.log("type", message.content.type);
+      var type = message.content.type;
+      app.models[type].find(args[0]).exec(function(err, response) {
+        sink({ author: message.author, content: { type: type, action: 'find', args: response} });
       });
     } else if (action == 'create') {
       console.log("type", message.content.type);
-      app.models.message.create(args[0]).exec(function(err, response) {
+      var type = message.content.type;
+      app.models[type].create(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'create', args: response} });
       });
     } else if (action == 'update') {
       console.log("type", message.content.type);
-      app.models.message.update(args[0], args[1]).exec(function(err, response) {
+      var type = message.content.type;
+      app.models[type].update(args[0], args[1]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'update', args: response} });
       });
     } else if (action == 'destroy') {
       console.log("type", message.content.type);
-      app.models.message.destroy(args[0]).exec(function(err, response) {
+      var type = message.content.type;
+      app.models[type].destroy(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'destroy', args: response} });
       });
     };

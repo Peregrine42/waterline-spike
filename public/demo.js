@@ -1,3 +1,9 @@
+function request_graph_connections(socket, channel, message)
+{
+  socket.emit(channel, find_connection_message());
+  return message;
+}
+
 var mainContainer = $("#diagramContainer");
 
 jsPlumb.setContainer(mainContainer);
@@ -140,11 +146,19 @@ jsPlumb.ready(function() {
 
   var read_results = db_events
     .filter(message_filter, "action", "find")
+    .filter(message_filter, "type", "graph_node")
+    .map(clear_dom, $, mainContainer)
+    .map(request_graph_connections, socket, channel)
+    .flatMap(extract_multiple, Bacon)
+
+  var connection_read_results = db_events
+    .filter(message_filter, "action", "find")
+    .filter(message_filter, "type", "connection")
     .map(clear_dom, $, mainContainer)
     .flatMap(extract_multiple, Bacon)
 
   var new_nodes = new_from_db.merge(read_results)
-    .filter(message_filter, "type", "node")
+    .filter(message_filter, "type", "graph_node")
     .map(create_div, $)
     .map(make_node, node_settings)
     .map(add_label, node_settings)
@@ -163,7 +177,7 @@ jsPlumb.ready(function() {
     .flatMap(extract_multiple, Bacon)
 
   var updates = updates_from_db
-    .filter(message_filter, "type", "node")
+    .filter(message_filter, "type", "graph_node")
     .onValue(update_node, $, node_settings)
 
   var destroyed_nodes = db_events
@@ -172,7 +186,7 @@ jsPlumb.ready(function() {
     .map(destroy_node, $, node_settings)
     .onValue(destroy_endpoint, jsPlumb, node_settings)
 
-  var new_connections = new_from_db.merge(read_results)
+  var new_connections = new_from_db.merge(connection_read_results)
     .filter(message_filter, "type", "connection")
     .onValue(make_connection, jsPlumb, document)
 
