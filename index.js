@@ -59,29 +59,22 @@ function database_request(message) {
   return Bacon.fromBinder(function(sink) {
     var action = message.content.action;
     var args = message.content.args;
+    var type = message.content.type;
     if (action == 'find') {
-      console.log("type", message.content.type);
-      var type = message.content.type;
       app.models[type].find(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { type: type, action: 'find', args: response} });
       });
     } else if (action == 'create') {
-      console.log("type", message.content.type);
-      var type = message.content.type;
       app.models[type].create(args[0]).exec(function(err, response) {
-        sink({ author: message.author, content: { action: 'create', args: response} });
+        sink({ author: message.author, content: { type: type, action: 'create', args: response} });
       });
     } else if (action == 'update') {
-      console.log("type", message.content.type);
-      var type = message.content.type;
       app.models[type].update(args[0], args[1]).exec(function(err, response) {
-        sink({ author: message.author, content: { action: 'update', args: response} });
+        sink({ author: message.author, content: { type: type, action: 'update', args: response} });
       });
     } else if (action == 'destroy') {
-      console.log("type", message.content.type);
-      var type = message.content.type;
       app.models[type].destroy(args[0]).exec(function(err, response) {
-        sink({ author: message.author, content: { action: 'destroy', args: response} });
+        sink({ author: message.author, content: { type: type, action: 'destroy', args: response} });
       });
     };
   });
