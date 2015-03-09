@@ -8,12 +8,12 @@
 
 .node {
   position: absolute;
-  border: 1px solid blue;
+  border: 3px solid grey;
   border-radius: 10%;
   z-index: 200;
   background-color: white;
-  width: 50px;
-  height: 60px;
+  width: 70px;
+  height: 80px;
 }
 
 .label {
@@ -22,10 +22,9 @@
   position: relative;
   background-color: white;
   color: black;
-  width: 20px;
   height: 60px;
-  left: -7px;
-  top: 50px;
+  left: -10px;
+  top: -10px;
 }
 
 .dragging {

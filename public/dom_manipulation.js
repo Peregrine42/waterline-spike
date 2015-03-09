@@ -91,8 +91,8 @@ function make_connection(instance, the_document, message) {
 
   instance.connect({
     uuids: [source_id, target_id],
-    paintStyle:{ strokeStyle:"black", lineWidth:10 },
-    hoverPaintStyle: { strokeStyle: "blue", lineWidth: 12 },
+    paintStyle:{ strokeStyle:"grey", lineWidth:10 },
+    hoverPaintStyle: { strokeStyle: "lightblue", lineWidth: 12 },
     connector: "Straight"
   });
 }
