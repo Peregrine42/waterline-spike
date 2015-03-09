@@ -40,11 +40,9 @@ var messages      = baconified.messages;
 var broadcast_bus = baconified.broadcast;
 
 function read_only_messages(message) {
-  console.log('filtering message', message);
   if (message.content.action === 'find') {
     return true;
   };
-  console.log('returning false');
   return false;
 }
 
@@ -55,17 +53,8 @@ function write_only_messages(message) {
 function database_request(message) {
   console.log('handling db request', message);
   return Bacon.fromBinder(function(sink) {
-    //console.log('message', message);
-    //console.log('content', message.content);
     var action = message.content.action;
     var args = message.content.args;
-    console.log('action', action);
-    console.log('args', args);
-    //console.log('args inside', args);
-    //app.models.message[action].apply(this, args).exec(function(err, response) {
-      //console.log('sunk', {author: message.author, content: {action:response}});
-      //sink({ author: message.author, content: { action: response} })
-    //})
     if (action == 'find') {
       app.models.message.find(args[0]).exec(function(err, response) {
         sink({ author: message.author, content: { action: 'find', args: response} });
@@ -83,24 +72,13 @@ function database_request(message) {
         sink({ author: message.author, content: { action: 'destroy', args: response} });
       });
     };
-    //return app.models.message.find(args[0]).exec(sink);
-  //return Bacon.fromNodeCallback(app.models.message.find, args[0]).flatMap(function(responses) {
-    //return Bacon.fromArray(response);
   });
 }
-
-//function exec_it(response) {
-  //return Bacon.fromBinder(function(sink) {
-      //sink(response);
-  //});
-//}
-
 
 function send_to_author(message) {
   console.log('sending out', message.content);
   var bus = message.author;
   bus.push(message.content);
-  //bus.push(Bacon.noMore);
 }
 
 function set_author(new_author, message) {
@@ -111,16 +89,12 @@ function set_author(new_author, message) {
 var read_responses  = messages.filter(read_only_messages)
                               .flatMap(database_request);
 
-//console.log(read_responses);
-                              //.onValue(function(response) {
-                                //console.log('response:', response); return response });
 var write_responses = messages.filter(write_only_messages)
                               .map(set_author, broadcast_bus)
                               .flatMap(database_request);
 
 read_responses.onValue(send_to_author);
 write_responses.onValue(send_to_author);
-//write_responses.onValue(function(message) {console.log(message)});
 
 orm.initialize(config, function(err, models) {
   if(err) throw err;
